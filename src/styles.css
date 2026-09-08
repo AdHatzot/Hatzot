@@ -1,0 +1,86 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Design tokens — single source of truth, mirrored in tailwind.config.ts. */
+:root {
+  --bg: #070a0d; /* app background */
+  --panel: #0d1218; /* sidebars, navbar, ticker */
+  --panel-2: #111820; /* cards, inputs, raised surfaces */
+  --line: #1c2733; /* default border */
+  --line-hot: #2b3a4a; /* emphasised border, hover */
+
+  --text: #c8d6e2;
+  --text-dim: #5f7285;
+
+  --accent: #2f9bff; /* core chrome accent */
+
+  /* One colour per team. The code appears everywhere. */
+  --team-red: #ff3b30; /* צד אדום — מטרות אויב */
+  --team-blue: #2f9bff; /* צד כחול — מיירטים וכלים */
+  --team-alerts: #ffb020; /* התראות יישובים */
+  --team-logistics: #37d67a; /* לוגיסטיקה */
+  --team-loop: #a78bfa; /* סגירת מעגל */
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  /* Heebo for Hebrew UI; self-hosted under public/ in the air-gapped build. */
+  font-family: 'Heebo', system-ui, sans-serif;
+}
+
+/* Tabular figures on all monospace numbers so live counters stop jittering. */
+.font-mono,
+code {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Leaflet's container defaults to light grey; keep the map dark before tiles load. */
+.leaflet-container {
+  background: var(--bg);
+}
+
+/* Leaflet ships a light control theme; bring it into ours. */
+.leaflet-bar {
+  border: 1px solid var(--line);
+  box-shadow: none;
+}
+.leaflet-bar a,
+.leaflet-bar a:hover {
+  background: var(--panel);
+  color: var(--text);
+  border-bottom-color: var(--line);
+}
+.leaflet-bar a:hover {
+  background: var(--panel-2);
+}
+.leaflet-tooltip {
+  background: var(--panel);
+  color: var(--text);
+  border: 1px solid var(--line);
+  box-shadow: none;
+}
+.leaflet-tooltip-top::before {
+  border-top-color: var(--line);
+}
+
+/* Attribution is a licence condition (CARTO free tier) — keep it legible,
+   but let it recede like the rest of the chrome. */
+.leaflet-control-attribution {
+  background: var(--panel);
+  color: var(--text-dim);
+  border-top: 1px solid var(--line);
+  border-inline-start: 1px solid var(--line);
+  font-size: 10px;
+}
+.leaflet-control-attribution a {
+  color: var(--text-dim);
+}
