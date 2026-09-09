@@ -52,7 +52,7 @@ export async function mountPolygonLayer(
       })
         .bindPopup(
           `
-  <div dir="rtl" style="font-size: 26px; font-weight: 700;">
+  <div dir="rtl" style="font-size: 14px; font-weight: 700;">
     ${feature.properties.CITY_NAME ?? ""}
   </div>
 `,
