@@ -13,3 +13,7 @@ import * as logisticsService from "../services/logistics.service";
 export async function getStatus(_req: Request, res: Response): Promise<void> {
   res.json(await logisticsService.getStatus());
 }
+
+export async function getAll(_req: Request, res: Response): Promise<void> {
+  res.json(await logisticsService.getAll());
+}

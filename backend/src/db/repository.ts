@@ -14,7 +14,7 @@
  * silently stops working the day the database lands.
  */
 export interface Identifiable {
-  id: string;
+  id: number;
 }
 
 export interface Repository<T extends Identifiable> {
