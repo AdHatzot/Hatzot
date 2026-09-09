@@ -49,6 +49,7 @@ export async function getCityZones(
     );
 }
 
+/*
 export async function getIntersectingCityZones(
     req: Request<Record<string, never>, unknown, IntersectingZonesBody>,
     res: Response,
@@ -73,3 +74,4 @@ export async function getAlertableCityZones(
     const { polygons, location, velocity } = req.body;
     res.json(alertsService.getAlertableCityZones(polygons, location, velocity));
 }
+    */
