@@ -5,10 +5,7 @@
  * @updated  2026-09-09
  */
 
-import L, {
-  type LayerGroup,
-  type Map as LeafletMap,
-} from "leaflet";
+import L, { type LayerGroup, type Map as LeafletMap } from "leaflet";
 
 type Interceptor = {
   name: string;
@@ -110,11 +107,8 @@ const launcherInterceptors: Record<number, Interceptor[]> = {
   ],
 };
 
-function createLauncherPopup(
-  launcher: Launcher,
-): string {
-  const interceptors =
-    launcherInterceptors[launcher.id] ?? [];
+function createLauncherPopup(launcher: Launcher): string {
+  const interceptors = launcherInterceptors[launcher.id] ?? [];
 
   const interceptorRows = interceptors
     .map(
@@ -447,11 +441,7 @@ function createLauncherPopup(
   `;
 }
 
-export function mountBlueLayer(
-  group: LayerGroup,
-  _map: LeafletMap,
-): void {
-
+export function mountBlueLayer(group: LayerGroup, _map: LeafletMap): void {
   const blueIcon = L.icon({
     iconUrl: "/icons/blue-marker.svg",
     iconSize: [32, 32],
@@ -459,40 +449,22 @@ export function mountBlueLayer(
   });
 
   launchers.forEach((launcher) => {
-
-    L.marker(
-      [
-        launcher.location.lat,
-        launcher.location.long,
-      ],
-      {
-        icon: blueIcon,
-      },
-    )
-      .bindPopup(
-        createLauncherPopup(launcher),
-        {
-          className:
-            "blue-launcher-popup",
-          closeButton: true,
-          maxWidth: 280,
-          minWidth: 280,
-        },
-      )
+    L.marker([launcher.location.lat, launcher.location.long], {
+      icon: blueIcon,
+    })
+      .bindPopup(createLauncherPopup(launcher), {
+        className: "blue-launcher-popup",
+        closeButton: true,
+        maxWidth: 280,
+        minWidth: 280,
+      })
       .addTo(group);
-
   });
 
-
-  // Remove Leaflet's default white popup background
-
-  const styleId =
-    "blue-launcher-popup-styles";
+  const styleId = "blue-launcher-popup-styles";
 
   if (!document.getElementById(styleId)) {
-
-    const style =
-      document.createElement("style");
+    const style = document.createElement("style");
 
     style.id = styleId;
 
