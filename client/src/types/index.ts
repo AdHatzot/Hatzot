@@ -8,6 +8,8 @@ export type Location = {
 export type Drone = {
   id: number;
   location: Location;
+  heading: number;
+  velocity: number;
   type: DroneType;
 };
 
