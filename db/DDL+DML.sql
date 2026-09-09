@@ -18,6 +18,8 @@ CREATE SCHEMA IF NOT EXISTS hatzot;
 -- CASCADE also removes dependent indexes/constraints automatically.
 -- =====================================================================
 
+DROP TYPE IF EXISTS hatzot.deployment_status CASCADE;
+
 DROP TABLE IF EXISTS hatzot.launcher_ammunition CASCADE;
 DROP TABLE IF EXISTS hatzot.interceptor_type CASCADE;
 DROP TABLE IF EXISTS hatzot.live_launcher CASCADE;
@@ -82,9 +84,12 @@ CREATE TABLE hatzot.launcher_type (
 -- ---------------------------------------------------------------------
 -- DEPLOYMENT
 -- ---------------------------------------------------------------------
+CREATE TYPE hatzot.deployment_status AS ENUM ('Real', 'Saved', 'Draft');
+
 CREATE TABLE hatzot.deployment (
-    id      serial  PRIMARY KEY,
-    name    text    NOT NULL
+    id      serial                   PRIMARY KEY,
+    name    text                     NOT NULL,
+    status  hatzot.deployment_status NOT NULL DEFAULT 'Draft'
 );
 
 -- ---------------------------------------------------------------------
@@ -176,23 +181,46 @@ INSERT INTO hatzot.drone_position (drone_id, longitude, latitude, asl, agl, reco
 
 -- Launcher types
 INSERT INTO hatzot.launcher_type (name, reload_time_s, range_m) VALUES
-    ('Fixed Site SAM', 8.5, 40000),
-    ('Mobile Gun System', 3.2, 4000),
-    ('Directed Energy', 0.5, 3000);
+    ('ShieldNest-Lite', 45, 40000),
+    ('IronHook-SR', 90, 60000),
+    ('HorizonEye-MX', 30, 25000),
+    ('CloudFence-Area', 120, 80000);
 
 -- Deployments
-INSERT INTO hatzot.deployment (name) VALUES
-    ('Northern Sector'),
-    ('Coastal Sector');
+INSERT INTO hatzot.deployment (name, status) VALUES
+    ('Northern Sector', 'Real'),
+    ('Coastal Sector', 'Saved');
 
 -- Live launchers
-INSERT INTO hatzot.live_launcher (launcher_type_id, deployment_id, longitude, latitude, asl, agl, amount, active) VALUES
-    ((SELECT id FROM hatzot.launcher_type WHERE name = 'Fixed Site SAM'),
-        (SELECT id FROM hatzot.deployment WHERE name = 'Northern Sector'), 34.7900, 32.0900, 50.0, 0.0, 8, true),
-    ((SELECT id FROM hatzot.launcher_type WHERE name = 'Mobile Gun System'),
-        (SELECT id FROM hatzot.deployment WHERE name = 'Coastal Sector'), 34.7700, 32.0600, 20.0, 0.0, 4, true),
-    ((SELECT id FROM hatzot.launcher_type WHERE name = 'Directed Energy'),
-        (SELECT id FROM hatzot.deployment WHERE name = 'Northern Sector'), 34.8100, 32.1100, 15.0, 0.0, 1, false);
+INSERT INTO hatzot.live_launcher (launcher_type_id, deployment_id, longitude, latitude, asl, agl, amount) VALUES
+    ((SELECT id FROM hatzot.launcher_type WHERE name = 'ShieldNest-Lite'), 1, 35.2845, 33.0512, 480.0, 5.5, 8),
+    ((SELECT id FROM hatzot.launcher_type WHERE name = 'ShieldNest-Lite'), 1, 35.195, 32.8341, 210.0, 6.2, 8),
+    ((SELECT id FROM hatzot.launcher_type WHERE name = 'ShieldNest-Lite'), 2, 34.981, 32.482, 65.0, 4.8, 6),
+    ((SELECT id FROM hatzot.launcher_type WHERE name = 'ShieldNest-Lite'), 2, 34.8821, 32.0834, 45.0, 8.0, 6),
+    ((SELECT id FROM hatzot.launcher_type WHERE name = 'ShieldNest-Lite'), 2, 34.8412, 31.7825, 115.0, 5.0, 6),
+    ((SELECT id FROM hatzot.launcher_type WHERE name = 'ShieldNest-Lite'), 2, 34.612, 31.5432, 95.0, 4.5, 4),
+    ((SELECT id FROM hatzot.launcher_type WHERE name = 'ShieldNest-Lite'), 2, 34.7215, 31.334, 180.0, 7.1, 4),
+    ((SELECT id FROM hatzot.launcher_type WHERE name = 'ShieldNest-Lite'), 2, 34.895, 31.1215, 320.0, 5.2, 4),
+    ((SELECT id FROM hatzot.launcher_type WHERE name = 'IronHook-SR'), 1, 35.572, 33.185, 520.0, 8.5, 12),
+    ((SELECT id FROM hatzot.launcher_type WHERE name = 'IronHook-SR'), 1, 35.145, 32.712, 140.0, 10.0, 10),
+    ((SELECT id FROM hatzot.launcher_type WHERE name = 'IronHook-SR'), 2, 34.935, 32.221, 55.0, 9.2, 10),
+    ((SELECT id FROM hatzot.launcher_type WHERE name = 'IronHook-SR'), 2, 34.698, 31.685, 85.0, 6.8, 8),
+    ((SELECT id FROM hatzot.launcher_type WHERE name = 'IronHook-SR'), 2, 34.851, 31.425, 260.0, 11.4, 8),
+    ((SELECT id FROM hatzot.launcher_type WHERE name = 'IronHook-SR'), 2, 34.931, 30.985, 510.0, 7.5, 6),
+    ((SELECT id FROM hatzot.launcher_type WHERE name = 'HorizonEye-MX'), 1, 35.421, 32.981, 780.0, 12.0, 4),
+    ((SELECT id FROM hatzot.launcher_type WHERE name = 'HorizonEye-MX'), 1, 34.992, 32.355, 95.0, 14.5, 4),
+    ((SELECT id FROM hatzot.launcher_type WHERE name = 'HorizonEye-MX'), 2, 34.975, 31.852, 245.0, 11.0, 3),
+    ((SELECT id FROM hatzot.launcher_type WHERE name = 'HorizonEye-MX'), 2, 34.795, 31.258, 310.0, 13.2, 3),
+    ((SELECT id FROM hatzot.launcher_type WHERE name = 'CloudFence-Area'), 1, 35.591, 33.221, 620.0, 4.0, 16),
+    ((SELECT id FROM hatzot.launcher_type WHERE name = 'CloudFence-Area'), 1, 35.295, 32.915, 290.0, 3.5, 16),
+    ((SELECT id FROM hatzot.launcher_type WHERE name = 'CloudFence-Area'), 1, 35.289, 32.612, 110.0, 4.2, 14),
+    ((SELECT id FROM hatzot.launcher_type WHERE name = 'CloudFence-Area'), 2, 34.921, 32.435, 35.0, 5.0, 14),
+    ((SELECT id FROM hatzot.launcher_type WHERE name = 'CloudFence-Area'), 2, 34.852, 32.145, 40.0, 3.8, 12),
+    ((SELECT id FROM hatzot.launcher_type WHERE name = 'CloudFence-Area'), 2, 35.012, 31.892, 220.0, 4.6, 12),
+    ((SELECT id FROM hatzot.launcher_type WHERE name = 'CloudFence-Area'), 2, 34.582, 31.671, 50.0, 3.2, 10),
+    ((SELECT id FROM hatzot.launcher_type WHERE name = 'CloudFence-Area'), 2, 34.621, 31.485, 105.0, 4.0, 10),
+    ((SELECT id FROM hatzot.launcher_type WHERE name = 'CloudFence-Area'), 2, 35.205, 31.251, 580.0, 5.5, 8),
+    ((SELECT id FROM hatzot.launcher_type WHERE name = 'CloudFence-Area'), 2, 34.805, 30.612, 860.0, 4.8, 8);
 
 -- Interceptor types
 INSERT INTO hatzot.interceptor_type (name, range_m, price, estimated_success_rate, capacity) VALUES
