@@ -18,6 +18,6 @@ export const TEAM_LABELS: Readonly<Record<Team, string>> = {
   red: "צד אדום",
   blue: "צד כחול",
   alerts: "התראות",
-  logistics: "ניהול אמל״ח",
+  logistics: "יצירת פריסה",
   loop: "סגירת מעגל",
 };
