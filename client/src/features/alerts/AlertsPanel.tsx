@@ -26,13 +26,13 @@ export function AlertsPanel(): JSX.Element {
     <section data-testid="alerts-panel" className="flex h-full flex-col">
       <div className="mt-4 flex overflow-hidden rounded border border-line">
         <button
-          className="flex-1 border-l border-line bg-panel-2 py-2 text-sm font-medium text-text"
+          className={`flex-1 border-l border-line py-2 text-sm font-medium text-text ${isActiveTab ? "bg-panel-2" : ""}`}
           onClick={() => setIsActiveTab(true)}
         >
           אירועים פעילים {DEMO_DRONES.length}
         </button>
         <button
-          className="flex-1 bg-panel py-2 text-sm text-text-dim"
+          className={`flex-1 bg-panel py-2 text-sm text-text-dim ${!isActiveTab ? "bg-panel-2" : ""}`}
           onClick={() => setIsActiveTab(false)}
         >
           אירועים שטופלו 0
