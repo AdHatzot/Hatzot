@@ -15,3 +15,11 @@ export const alertsRoutes: Router = Router();
 
 alertsRoutes.get("/", asyncHandler(alerts.getStatus));
 alertsRoutes.get("/cities", asyncHandler(alerts.getCityZones));
+alertsRoutes.post(
+    "/cities/intersections",
+    asyncHandler(alerts.getIntersectingCityZones),
+);
+alertsRoutes.post(
+    "/cities/alertable",
+    asyncHandler(alerts.getAlertableCityZones),
+);

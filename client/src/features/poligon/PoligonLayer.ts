@@ -20,7 +20,7 @@ interface PolygonResponse {
   features: PolygonFeature[];
 }
 
-const DEFAULT_COLOR = "#3388ff";
+const DEFAULT_COLOR = "#a8a8a8";
 const ALERT_COLOR = "#ff0000";
 const BLINK_INTERVAL_MS = 500;
 const SOLID_RED_DURATION_MS = 10 * 60 * 1000; // 10 minutes
@@ -33,6 +33,8 @@ export async function mountPolygonLayer(
 ): Promise<() => void> {
   const alertedStub = [2, 4, 5, 12, 41, 1511, 1442, 142, 65, 654];
 
+  // Track every timer/interval created so callers can clean them up
+  // (e.g. on component unmount) and avoid leaks/duplicate blinking.
   const timers: Timer[] = [];
 
   try {
@@ -64,18 +66,17 @@ export async function mountPolygonLayer(
       })
         .bindPopup(
           `
-          <div>
-            <strong>${feature.properties.ENG_NAME ?? ""}</strong>
-            <br />
-            ${feature.properties.CITY_NAME ?? ""}
-          </div>
-        `,
+  <div dir="rtl" style="font-size: 14px; font-weight: 700;">
+    ${feature.properties.CITY_NAME ?? ""}
+  </div>
+`,
         )
         .addTo(group);
 
+      // Determine whether this feature should enter the alert sequence.
       const objectId = feature.properties.OBJECTID;
       const isAlerted =
-        objectId !== undefined && alertedStub.includes(objectId);
+        objectId !== undefined && alertedStub.includes(Number(objectId));
 
       if (!isAlerted) {
         return;
@@ -111,7 +112,8 @@ function startAlertSequence(
     polygon.setStyle({ color, fillColor: color });
   };
 
-  // Phase 1: blink red/blue for `ttlMs`
+  // Phase 1: blink red/grey for `ttlMs`
+  setColor(ALERT_COLOR);
   const blinkInterval = setInterval(() => {
     showingRed = !showingRed;
     setColor(showingRed ? ALERT_COLOR : DEFAULT_COLOR);
@@ -123,7 +125,7 @@ function startAlertSequence(
     clearInterval(blinkInterval);
     setColor(ALERT_COLOR);
 
-    // Phase 3: after 10 more minutes, revert to default blue
+    // Phase 3: after 10 more minutes, revert to default color
     const revertTimeout = setTimeout(() => {
       setColor(DEFAULT_COLOR);
     }, SOLID_RED_DURATION_MS);
