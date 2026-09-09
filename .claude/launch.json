@@ -4,8 +4,22 @@
     {
       "name": "c2-dashboard",
       "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["dev"],
+      "runtimeArgs": [
+        "-C",
+        "client",
+        "dev"
+      ],
       "port": 5173
+    },
+    {
+      "name": "c2-backend",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": [
+        "-C",
+        "backend",
+        "dev"
+      ],
+      "port": 3000
     }
   ]
 }

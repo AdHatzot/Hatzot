@@ -8,3 +8,4 @@ dist-ssr
 *.log
 
 .claude/settings.local.json
+.vite

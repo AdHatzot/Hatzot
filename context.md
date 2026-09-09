@@ -30,11 +30,11 @@ not a plausible implementation.
 
 | Team        | Start here                             |
 | ----------- | -------------------------------------- |
-| `red`       | `src/features/red/RedLayer.ts`         |
-| `blue`      | `src/features/blue/BlueLayer.ts`       |
-| `alerts`    | `src/features/alerts/AlertsPanel.tsx`  |
-| `logistics` | `src/features/logistics/LogisticsView.tsx` |
-| `loop`      | `src/features/loop/LogsView.tsx`       |
+| `red`       | `client/src/features/red/RedLayer.ts`         |
+| `blue`      | `client/src/features/blue/BlueLayer.ts`       |
+| `alerts`    | `client/src/features/alerts/AlertsPanel.tsx`  |
+| `logistics` | `client/src/features/logistics/LogisticsView.tsx` |
+| `loop`      | `client/src/features/loop/LogsView.tsx`       |
 
 Delete the placeholder dot in your layer as soon as you have something real.
 

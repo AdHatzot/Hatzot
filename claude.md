@@ -1,9 +1,13 @@
 # CLAUDE.md
 
-Air-defence C2 dashboard — **frontend only**. Shared repo, five feature teams, one product.
+Air-defence C2 dashboard. Shared repo, five feature teams, one product —
+`client/` (Vite + React) and `backend/` (Node + Express + ws).
 This file is the persistent contract. `context.md` holds the current build brief.
 
-No backend, no database, no WebSocket in this repo yet. Data sources arrive later.
+`backend/` is a bare skeleton: an HTTP + WebSocket shell layered
+`routes → controllers → services → repositories`, one file per team in each.
+No database yet — repositories run on an in-memory adapter behind a port that
+TypeORM drops into later. The simulation feed arrives later.
 
 ---
 
@@ -16,7 +20,9 @@ No backend, no database, no WebSocket in this repo yet. Data sources arrive late
 | State           | Zustand                      | one store per feature. Never Context for hot data       |
 | Routing         | react-router-dom v6          | three routes                                            |
 | Styling         | Tailwind CSS                 | dark, RTL                                               |
-| Package manager | pnpm                         | single app, no workspace                                |
+| Package manager | pnpm                         | one `package.json` per app, no workspace                |
+| Backend         | Node 22 + Express + `ws`     | `backend/`, CommonJS, `tsx` for dev. Layered, per team  |
+| Persistence     | TypeORM — **not installed yet** | `backend/src/db/` is the port; install steps in `db/data-source.ts` |
 
 Nothing gets added to this list without a lead's sign-off.
 
@@ -53,6 +59,13 @@ Change it only with a lead's agreement; the five teams never need to.
 The point of this layout: **each team has files nobody else opens.** Two teams
 working the same sprint should never touch the same file.
 
+The table below is `client/src/`. On the backend the split is by file, not
+folder: each layer holds one file per team and a team edits only its own —
+`routes/red.routes.ts`, `controllers/red.controller.ts`,
+`services/red.service.ts`, `repositories/red.repository.ts`,
+`db/entities/red.entity.ts`, `db/seed/red.seed.ts`. Everything else under
+`backend/src/` is core.
+
 | Path                        | Owner       |
 | --------------------------- | ----------- |
 | `src/features/red/**`       | `red`       |
@@ -85,46 +98,70 @@ its own, ahead of the feature work, so it never sits in a long-lived branch.
 .
 ├── CLAUDE.md
 ├── context.md
-├── index.html
-├── .env.example
-├── public/                     ← raster tile assets, later local basemap
-└── src/
-    ├── main.tsx
-    ├── styles.css
-    ├── app/                    ★ core only
-    │   ├── App.tsx
-    │   ├── router.tsx
-    │   └── layout/
-    │       ├── AppShell.tsx
-    │       ├── NavBar.tsx
-    │       ├── SidebarStart.tsx   ← hosts the alerts panel
-    │       ├── SidebarEnd.tsx     ← free slot, unclaimed
-    │       └── Ticker.tsx
-    ├── map/                    ★ core only
-    │   ├── MapShell.tsx           the one Leaflet instance
-    │   ├── MapContext.tsx
-    │   ├── layerRegistry.ts       ← team layers wired here
-    │   ├── useTeamLayers.ts       group-per-team lifecycle + toggle
-    │   └── controls/
-    │       ├── LayersButton.tsx
-    │       └── LayersPanel.tsx
-    ├── shared/                 ★ core only, read-only for teams
-    │   ├── contracts.ts           TeamMapLayer — the team/shell seam
-    │   ├── geo.ts                 Israel centre, zoom, bounds
-    │   ├── localities.ts          118 localities + coordinates
-    │   └── theme.ts               cssVar() for SVG/canvas colours
-    ├── pages/                     thin route stubs, core-owned
-    │   ├── OpsPage.tsx            חמ״ל — the map is the surface
-    │   ├── LogisticsPage.tsx      → features/logistics
-    │   └── LogsPage.tsx           → features/loop
-    ├── features/
-    │   ├── red/       { index.ts, RedLayer.ts }
-    │   ├── blue/      { index.ts, BlueLayer.ts }
-    │   ├── alerts/    { index.ts, AlertsPanel.tsx }
-    │   ├── logistics/ { index.ts, LogisticsView.tsx }
-    │   └── loop/      { index.ts, LogsView.tsx }
-    └── types/
-        └── events.ts           ★ shared event names — frozen
+├── client/                     ← Vite + React
+│   ├── index.html
+│   ├── .env.example
+│   ├── public/                 ← raster tile assets, later local basemap
+│   └── src/
+│       ├── main.tsx
+│       ├── styles.css
+│       ├── app/                    ★ core only
+│       │   ├── App.tsx
+│       │   ├── router.tsx
+│       │   └── layout/
+│       │       ├── AppShell.tsx
+│       │       ├── NavBar.tsx
+│       │       ├── SidebarStart.tsx   ← hosts the alerts panel
+│       │       ├── SidebarEnd.tsx     ← free slot, unclaimed
+│       │       └── Ticker.tsx
+│       ├── map/                    ★ core only
+│       │   ├── MapShell.tsx           the one Leaflet instance
+│       │   ├── MapContext.tsx
+│       │   ├── layerRegistry.ts       ← team layers wired here
+│       │   ├── useTeamLayers.ts       group-per-team lifecycle + toggle
+│       │   └── controls/
+│       │       ├── LayersButton.tsx
+│       │       └── LayersPanel.tsx
+│       ├── shared/                 ★ core only, read-only for teams
+│       │   ├── contracts.ts           TeamMapLayer — the team/shell seam
+│       │   ├── geo.ts                 Israel centre, zoom, bounds
+│       │   ├── localities.ts          118 localities + coordinates
+│       │   └── theme.ts               cssVar() for SVG/canvas colours
+│       ├── pages/                     thin route stubs, core-owned
+│       │   ├── OpsPage.tsx            חמ״ל — the map is the surface
+│       │   ├── LogisticsPage.tsx      → features/logistics
+│       │   └── LogsPage.tsx           → features/loop
+│       ├── features/
+│       │   ├── red/       { index.ts, RedLayer.ts }
+│       │   ├── blue/      { index.ts, BlueLayer.ts }
+│       │   ├── alerts/    { index.ts, AlertsPanel.tsx }
+│       │   ├── logistics/ { index.ts, LogisticsView.tsx }
+│       │   └── loop/      { index.ts, LogsView.tsx }
+│       └── types/
+│           └── events.ts           ★ shared event names — frozen
+└── backend/                    ← Node + Express + ws, layered and flat
+    ├── .env.example
+    └── src/
+        ├── index.ts               express app + http server + ws hub; one app.use per team
+        ├── ws.ts                  broadcast(name, payload) to every connected screen
+        ├── types.ts               Team, EventName — mirror of client/src/types/events.ts
+        ├── shared/                 ★ core only
+        │   └── asyncHandler.ts        wraps async controllers so rejections reach the JSON error handler
+        ├── db/                     ★ core only — except entities/ and seed/, which are per team
+        │   ├── index.ts               createRepository() + initDatabase() — the one TypeORM swap point
+        │   ├── repository.ts          Repository<T> port — the only thing services depend on
+        │   ├── in-memory.repository.ts  today's adapter, seeded from seed/
+        │   ├── typeorm.repository.ts    tomorrow's adapter — placeholder until `typeorm` is installed
+        │   ├── data-source.ts           DataSource placeholder + the five install steps
+        │   ├── entities/  { blue.entity.ts }   plain interfaces now, @Entity classes later
+        │   └── seed/      { blue.seed.ts }     rows for the in-memory adapter
+        ├── routes/          <team>.routes.ts       one Router per team — paths only
+        ├── controllers/     <team>.controller.ts   HTTP in, JSON out — no logic
+        ├── services/        <team>.service.ts      business logic, broadcasts over ws
+        └── repositories/    <team>.repository.ts   one Repository<T> handle per team
+
+        red · alerts · logistics · loop   GET /api/<team>                       → { team, status: "empty" }
+        blue                              GET /api/blue/batteries · /batteries/:id · /stats
 ```
 
 ---
@@ -153,6 +190,23 @@ prove the layer is wired.
 Locality coordinates live in `@/shared/localities` (118 entries, keyed by a
 stable `id`). Never keep a second coordinate table. `localitiesWithin(point, km)`
 turns a track position into the settlements to warn.
+
+---
+
+## Backend layers
+
+A request flows one way: `routes` → `controllers` → `services` →
+`repositories` → `db`. Never skip a layer, never go backwards.
+
+- **routes** — paths and `asyncHandler(controller)`. Nothing else.
+- **controllers** — parse `req`, call a service, write `res`. No logic, no persistence.
+- **services** — business logic. Talk to `repositories/<team>.repository.ts`;
+  push live changes with `broadcast()` from `ws.ts`. No Express types.
+- **repositories** — one `Repository<T>` handle per team, from `createRepository()`.
+- **db** — the `Repository<T>` port and its adapters. In-memory today; TypeORM
+  drops in at `db/index.ts` without touching a team file. Always `save()` after
+  mutating a row — the in-memory adapter hands out live references and will
+  not tell you when you forget.
 
 ---
 
@@ -225,11 +279,21 @@ Chrome is quiet: 1px borders, no shadows, corner radius 2–3px maximum. The map
 ## Commands
 
 ```bash
+cd client
 pnpm install
 pnpm dev          # :5173
 pnpm lint
 pnpm typecheck
 pnpm build
+```
+
+```bash
+cd backend
+pnpm install
+pnpm dev          # :3000 — http://localhost:3000/health, ws://localhost:3000/ws
+pnpm lint
+pnpm typecheck
+pnpm build        # → dist/, then pnpm start
 ```
 
 ## Environment
