@@ -7,7 +7,6 @@
  */
 import type { TeamMapLayer } from "@/shared/contracts";
 import { mountRedLayer } from "./RedLayer";
-import { useRedTargets } from "./useRedTargets";
 
 export const redLayer: TeamMapLayer = {
   id: "red",
@@ -16,5 +15,3 @@ export const redLayer: TeamMapLayer = {
   defaultVisible: true,
   mount: mountRedLayer,
 };
-
-export { useRedTargets };
