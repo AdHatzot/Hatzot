@@ -54,9 +54,9 @@ export async function mountPolygonLayer(
         );
 
       L.polygon(latLngs, {
-        color: "#3388ff",
+        color: "#a8a8a8",
         weight: 2,
-        fillColor: "#3388ff",
+        fillColor: "#a8a8a8",
         fillOpacity: 0.25,
       })
         .bindPopup(`
