@@ -27,6 +27,7 @@ export type Launcher = {
   interceptor: InterceptorType;
   amount: number;
   active: boolean;
+  ammunition: [InterceptorType, number][];
 };
 
 export enum LauncherType {
