@@ -1,5 +1,7 @@
-export interface Drone {
-  id: string;
-  name: string;
-  active: boolean;
-}
+interface Drone {
+  type:string,
+  id:string,
+  timestamp:string,
+  heading:number,
+  launch_point:{latitude:number,longitude:number}}
+

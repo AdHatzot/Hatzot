@@ -1,12 +1,11 @@
 import { Drone } from "@/types/drones";
 import { Crosshair } from "lucide-react";
 
-// this comment is for drone danger level - uncomment for feature !!!
 
-// const THREAT_STYLES: Record<ThreatLevel, string> = {
-//   high: "border-red-800 bg-red-950/60 text-red-400",
-//   medium: "border-yellow-800 bg-yellow-950/60 text-yellow-400",
-//   low: "border-emerald-800 bg-emerald-950/60 text-emerald-400",
+// const THREAT_LABELS: Record<ThreatLevel, string> = {
+//   high: "High",
+//   medium: "Medium",
+//   low: "Low",
 // };
 
 export function DroneRow({ drone }: { drone: Drone }): JSX.Element {
@@ -16,23 +15,18 @@ export function DroneRow({ drone }: { drone: Drone }): JSX.Element {
       className="flex items-center justify-between rounded border border-line bg-panel-2 px-3 py-2"
     >
       <div className="flex items-center gap-2">
-        <span className="text-sm text-text">{drone.name}</span>
+        <span className="text-sm text-text">{drone.id}</span>
         <span
-          className={
-            "h-2 w-2 rounded-full " +
-            (drone.active ? "bg-emerald-500" : "bg-text-dim")
-          }
+          className=
+            "h-2 w-2 rounded-full bg-emerald-500 "
         />
       </div>
 
       {/* <span
-        className={
-          "rounded border px-2 py-0.5 text-[11px] font-medium " +
-          THREAT_STYLES[0]
-        }
-      >
-        {THREAT_LABELS[0]}
-      </span> */}
+          className={`rounded border px-2 py-0.5 text-[11px] font-medium ${THREAT_STYLES[threatLevel]}`}
+        >
+          {THREAT_LABELS[threatLevel]}
+        </span> */}
 
       <button
         className="flex items-center gap-1.5 text-xs text-text-dim hover:text-text"
