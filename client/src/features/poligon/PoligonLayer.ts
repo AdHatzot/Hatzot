@@ -1,42 +1,41 @@
 import L, { type LayerGroup, type Map as LeafletMap } from "leaflet";
 
 interface PolygonFeature {
-  type: "Feature";
-  properties: {
-    CITY_NAME?: string;
-    ENG_NAME?: string;
-    [key: string]: unknown;
-  };
-  geometry: {
-    type: "Polygon";
-    coordinates: number[][][];
-  };
+    type: "Feature";
+    properties: {
+        CITY_NAME?: string;
+        ENG_NAME?: string;
+        [key: string]: unknown;
+    };
+    geometry: {
+        type: "Polygon";
+        coordinates: number[][][];
+    };
 }
 
 interface PolygonResponse {
-  type: "FeatureCollection";
-  features: PolygonFeature[];
+    type: "FeatureCollection";
+    features: PolygonFeature[];
 }
 
 export async function mountPolygonLayer(
-  group: LayerGroup,
-  _map: LeafletMap,
+    group: LayerGroup,
+    _map: LeafletMap,
 ): Promise<void> {
-  try {
-    const response = await fetch(
-      `${import.meta.env.VITE_API_URL}/api/alerts/cities`,
-    );
+    try {
+        const apiUrl = import.meta.env.VITE_API_URL ?? "";
+        const response = await fetch(`${apiUrl}/api/alerts/cities`);
 
     if (!response.ok) {
       throw new Error(`Failed to fetch polygons: ${response.status}`);
     }
 
-    const data: PolygonResponse = await response.json();
+        const data: PolygonResponse = await response.json();
 
-    data.features.forEach((feature) => {
-      if (feature.geometry.type !== "Polygon") {
-        return;
-      }
+        data.features.forEach((feature) => {
+            if (feature.geometry.type !== "Polygon") {
+                return;
+            }
 
       // GeoJSON: [longitude, latitude]
       // Leaflet: [latitude, longitude]
