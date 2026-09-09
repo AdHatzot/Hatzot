@@ -12,9 +12,10 @@
  * `new TypeOrmRepository(entity)` instead, and no service, controller or
  * repository file changes. Install steps live in db/data-source.ts.
  */
-import { isDatabaseConfigured } from "./data-source";
+import { isDatabaseConfigured, dataSource } from "./data-source";
 import { InMemoryRepository } from "./in-memory.repository";
 import type { Identifiable, Repository } from "./repository";
+import { TypeOrmRepository } from "./typeorm.repository";
 
 export type { Identifiable, Repository } from "./repository";
 
@@ -29,8 +30,9 @@ export function createRepository<T extends Identifiable>(entity: string, seed: r
   const existing = registry.get(entity);
   if (existing !== undefined) return existing as Repository<T>;
 
-  // TypeORM: const repo = isDatabaseConfigured() ? new TypeOrmRepository<T>(entity) : new InMemoryRepository<T>(seed);
-  const repo: Repository<T> = new InMemoryRepository<T>(seed);
+  // TypeORM: 
+  const repo = isDatabaseConfigured() ? new TypeOrmRepository<T>(entity) : new InMemoryRepository<T>(seed);
+  // const repo: Repository<T> = new InMemoryRepository<T>(seed);
   registry.set(entity, repo);
   return repo;
 }
@@ -40,5 +42,6 @@ export async function initDatabase(): Promise<void> {
   if (isDatabaseConfigured()) {
     console.warn("DB_URL is set but TypeORM is not wired yet — serving in-memory seed data.");
   }
-  // TypeORM: await dataSource.initialize();
+  
+  await dataSource.initialize();
 }
