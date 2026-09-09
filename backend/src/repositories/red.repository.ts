@@ -1,3 +1,6 @@
+import { createRepository, Repository } from "../db";
+import { Drone } from "../db/entities/red/drone.entity";
+
 /**
  * @team     red
  * @owner    red-lead
@@ -13,4 +16,12 @@
  *
  * See repositories/blue.repository.ts for the worked example.
  */
-export {};
+export const droneRepository: Repository<Drone> = createRepository<Drone>(
+  "Drone",
+  [],
+);
+
+/** Save many drones to the repository (upsert). */
+export async function saveDrones(drones: Drone[]): Promise<Drone[]> {
+  return await droneRepository.saveMany(drones);
+}
