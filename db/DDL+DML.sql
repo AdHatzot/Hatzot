@@ -155,16 +155,16 @@ BEGIN;
 
 -- Drone types
 INSERT INTO hatzot.drone_type (name) VALUES
-    ('Fixed Wing'),
-    ('Multirotor'),
-    ('VTOL'),
-    ('Loitering Munition');
+    ('SkyMite C7'),
+    ('NanoSwarm-Q9'),
+    ('LoadBee M2'),
+    ('Falcon Long X4');
 
 -- Drones
 INSERT INTO hatzot.drone (drone_type_id, heading, velocity) VALUES
-    ((SELECT id FROM hatzot.drone_type WHERE name = 'Multirotor'), 45.0, 12.5),
-    ((SELECT id FROM hatzot.drone_type WHERE name = 'Fixed Wing'), 270.0, 38.2),
-    ((SELECT id FROM hatzot.drone_type WHERE name = 'Loitering Munition'), 90.0, 55.0);
+    ((SELECT id FROM hatzot.drone_type WHERE name = 'SkyMite C7'), 45.0, 12.5),
+    ((SELECT id FROM hatzot.drone_type WHERE name = 'NanoSwarm-Q9'), 270.0, 38.2),
+    ((SELECT id FROM hatzot.drone_type WHERE name = 'LoadBee M2'), 90.0, 55.0);
 
 -- Drone positions
 INSERT INTO hatzot.drone_position (drone_id, longitude, latitude, asl, agl, recorded_at) VALUES
@@ -195,33 +195,50 @@ INSERT INTO hatzot.live_launcher (launcher_type_id, deployment_id, longitude, la
 
 -- Interceptor types
 INSERT INTO hatzot.interceptor_type (name, range_m, price, estimated_success_rate, capacity) VALUES
-    ('Short Range Missile', 8000, 45000,
+    ('BuzzStop-15', 10000, 15000,
         '[
-            {"droneType": "Fixed Wing", "successRate": 0.85},
-            {"droneType": "Multirotor", "successRate": 0.93},
-            {"droneType": "VTOL", "successRate": 0.80},
-            {"droneType": "Loitering Munition", "successRate": 0.70}
-        ]'::jsonb, 8),
-    ('Medium Range Missile', 25000, 120000,
+            {"droneType": "SkyMite C7", "successRate": 0.72},
+            {"droneType": "NanoSwarm-Q9", "successRate": 0.38}
+        ]'::jsonb, 24),
+    ('NetWing-30', 10000, 22000,
         '[
-            {"droneType": "Fixed Wing", "successRate": 0.90},
-            {"droneType": "Multirotor", "successRate": 0.88},
-            {"droneType": "VTOL", "successRate": 0.86},
-            {"droneType": "Loitering Munition", "successRate": 0.78}
-        ]'::jsonb, 4),
-    ('AA Rounds', 3000, 50,
+            {"droneType": "SkyMite C7", "successRate": 0.81},
+            {"droneType": "LoadBee M2", "successRate": 0.64}
+        ]'::jsonb, 16),
+    ('DartFox-S', 30000, 45000,
         '[
-            {"droneType": "Fixed Wing", "successRate": 0.40},
-            {"droneType": "Multirotor", "successRate": 0.65},
-            {"droneType": "VTOL", "successRate": 0.55},
-            {"droneType": "Loitering Munition", "successRate": 0.35}
-        ]'::jsonb, 500);
+            {"droneType": "LoadBee M2", "successRate": 0.77},
+            {"droneType": "SkyMite C7", "successRate": 0.69}
+        ]'::jsonb, 15),
+    ('SpearMini-70', 30000, 68000,
+        '[
+            {"droneType": "LoadBee M2", "successRate": 0.84},
+            {"droneType": "Falcon Long X4", "successRate": 0.58}
+        ]'::jsonb, 10),
+    ('SkyLance-M', 50000, 120000,
+        '[
+            {"droneType": "Falcon Long X4", "successRate": 0.74}
+        ]'::jsonb, 12),
+    ('FalconClip-H', 70000, 180000,
+        '[
+            {"droneType": "Falcon Long X4", "successRate": 0.86},
+            {"droneType": "LoadBee M2", "successRate": 0.73}
+        ]'::jsonb, 6),
+    ('SwarmMist-5', 5000, 7500,
+        '[
+            {"droneType": "NanoSwarm-Q9", "successRate": 0.55}
+        ]'::jsonb, 45),
+    ('MicroNet-R', 7000, 18000,
+        '[
+            {"droneType": "NanoSwarm-Q9", "successRate": 0.68},
+            {"droneType": "SkyMite C7", "successRate": 0.73}
+        ]'::jsonb, 15);
 
 -- Launcher ammunition (stocks / loaded as)
 INSERT INTO hatzot.launcher_ammunition (launcher_id, interceptor_type_id, quantity) VALUES
-    (1, (SELECT id FROM hatzot.interceptor_type WHERE name = 'Short Range Missile'), 6),
-    (1, (SELECT id FROM hatzot.interceptor_type WHERE name = 'Medium Range Missile'), 2),
-    (2, (SELECT id FROM hatzot.interceptor_type WHERE name = 'AA Rounds'), 500),
-    (3, (SELECT id FROM hatzot.interceptor_type WHERE name = 'Short Range Missile'), 0);
+    (1, (SELECT id FROM hatzot.interceptor_type WHERE name = 'BuzzStop-15'), 6),
+    (1, (SELECT id FROM hatzot.interceptor_type WHERE name = 'NetWing-30'), 2),
+    (2, (SELECT id FROM hatzot.interceptor_type WHERE name = 'SwarmMist-5'), 500),
+    (3, (SELECT id FROM hatzot.interceptor_type WHERE name = 'BuzzStop-15'), 0);
 
 COMMIT;
