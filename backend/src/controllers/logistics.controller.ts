@@ -17,3 +17,7 @@ export async function getStatus(_req: Request, res: Response): Promise<void> {
 export async function getAll(_req: Request, res: Response): Promise<void> {
   res.json(await logisticsService.getAll());
 }
+
+export async function getLiveDeployments(req: Request<{ id: number }>, res: Response): Promise<void> {
+  res.json(await logisticsService.getLiveDeployments(req.params.id));
+}

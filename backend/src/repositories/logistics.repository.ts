@@ -15,7 +15,9 @@
  */
 
 // import { createRepository, type Repository } from "../db";
-import { Deployment } from "../db/entities/logistics.entity";
+import { Deployment } from "../db/entities/deployment.entity";
+import { LiveLauncher } from "../db/entities/liveLauncher.entity";
 import { dataSource } from "../db/data-source";
 
 export const logisticsDeploymentRepository = dataSource.getRepository(Deployment);
+export const logisticsLiveLauncherRepository = dataSource.getRepository(LiveLauncher);
