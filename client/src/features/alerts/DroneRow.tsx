@@ -7,6 +7,7 @@ import { Crosshair } from "lucide-react";
 //   medium: "Medium",
 //   low: "Low",
 // };
+//add note
 
 export function DroneRow({ drone }: { drone: Drone }): JSX.Element {
   return (
