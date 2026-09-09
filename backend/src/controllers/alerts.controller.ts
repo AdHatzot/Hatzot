@@ -21,8 +21,7 @@ export async function getCityZones(
 ): Promise<void> {
   res.json(
     await alertsService.getCityZones(
-      path.join(__dirname, "../db/assets/cities/CITIES.shp"),
-      path.join(__dirname, "../db/assets/cities/CITIES.dbf"),
+      path.join(__dirname, "../db/assets/cities/CITIES.geojson"),
     ),
   );
 }
