@@ -19,7 +19,10 @@ import { DronePosition } from "./drone-position.entity";
 @Entity("drone")
 export class Drone implements Identifiable {
   @PrimaryColumn({ type: "bigint" })
-  id!: string;
+  id!: number;
+
+  @Column({ type: "text", unique: true })
+  droneId!: string;
 
   @ManyToOne(() => DroneType, { nullable: false })
   @JoinColumn({ name: "drone_type" })
