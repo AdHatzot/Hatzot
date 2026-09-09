@@ -1,19 +1,7 @@
+import { Drone } from "@/types/drones";
 import { Crosshair } from "lucide-react";
 
-type ThreatLevel = "high" | "medium" | "low";
-
-export interface Drone {
-  id: string;
-  name: string;
-  active: boolean;
-}
-
-// this comment is for drone danger level
-// const THREAT_LABELS: Record<ThreatLevel, string> = {
-//   high: "סכנה גבוהה",
-//   medium: "סכנה בינונית",
-//   low: "סכנה נמוכה",
-// };
+// this comment is for drone danger level - uncomment for feature !!!
 
 // const THREAT_STYLES: Record<ThreatLevel, string> = {
 //   high: "border-red-800 bg-red-950/60 text-red-400",
@@ -40,10 +28,10 @@ export function DroneRow({ drone }: { drone: Drone }): JSX.Element {
       {/* <span
         className={
           "rounded border px-2 py-0.5 text-[11px] font-medium " +
-          THREAT_STYLES[drone.threatLevel]
+          THREAT_STYLES[0]
         }
       >
-        {THREAT_LABELS[drone.threatLevel]}
+        {THREAT_LABELS[0]}
       </span> */}
 
       <button

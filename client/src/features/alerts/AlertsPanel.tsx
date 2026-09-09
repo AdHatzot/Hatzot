@@ -7,8 +7,9 @@ import { Crosshair } from "lucide-react";
  * @updated  2026-09-08
  *
  */
-import { Drone, DroneRow } from "./DroneRow";
+import { DroneRow } from "./DroneRow";
 import { useState } from "react";
+import { Drone } from "@/types/drones";
 
 const DEMO_DRONES: Drone[] = [
   { id: "d1", name: "רחפן-01", active: true },
