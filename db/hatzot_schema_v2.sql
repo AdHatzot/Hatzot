@@ -56,7 +56,7 @@ CREATE TABLE hatzot.drone_type (
 -- DRONE
 -- ---------------------------------------------------------------------
 CREATE TABLE hatzot.drone (
-    id              bigint    GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    id              uuid   GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     drone_type_id   smallint  NOT NULL,
     heading         double precision,
     velocity        double precision,
