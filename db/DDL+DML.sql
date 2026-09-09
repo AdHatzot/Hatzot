@@ -75,6 +75,7 @@ CREATE TABLE hatzot.launcher_type (
     id              smallint    GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     name            text        NOT NULL,
     reload_time_s   numeric,
+    range_m         integer,
     CONSTRAINT uk_launcher_type_name UNIQUE (name)
 );
 
@@ -174,10 +175,10 @@ INSERT INTO hatzot.drone_position (drone_id, longitude, latitude, asl, agl, reco
     (3, 34.7500, 32.0700, 300.0, 280.0, now());
 
 -- Launcher types
-INSERT INTO hatzot.launcher_type (name, reload_time_s) VALUES
-    ('Fixed Site SAM', 8.5),
-    ('Mobile Gun System', 3.2),
-    ('Directed Energy', 0.5);
+INSERT INTO hatzot.launcher_type (name, reload_time_s, range_m) VALUES
+    ('Fixed Site SAM', 8.5, 40000),
+    ('Mobile Gun System', 3.2, 4000),
+    ('Directed Energy', 0.5, 3000);
 
 -- Deployments
 INSERT INTO hatzot.deployment (name) VALUES
