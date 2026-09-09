@@ -27,7 +27,7 @@ export async function mountPolygonLayer(
 ): Promise<void> {
   try {
     const response = await fetch(
-      "http://localhost:3000/api/alerts/cities",
+      `${import.meta.env.VITE_API_URL}/api/alerts/cities`,
     );
 
     if (!response.ok) {
