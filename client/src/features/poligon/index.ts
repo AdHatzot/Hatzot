@@ -10,7 +10,7 @@ import { mountPolygonLayer } from "./PoligonLayer";
 
 export const polygonLayer: TeamMapLayer = {
   id: "polygon",
-  label: "פוליגונים",
+  label: "יישובים",
   colour: "#3388ff",
   defaultVisible: true,
   mount: mountPolygonLayer,
