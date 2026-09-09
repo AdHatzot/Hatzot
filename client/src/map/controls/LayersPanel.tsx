@@ -4,8 +4,8 @@
  * @public   no
  * @updated  2026-09-08
  */
-import type { Team } from '@/types/events';
-import type { TeamLayerState } from '../useTeamLayers';
+import type { Team } from "@/types/events";
+import type { TeamLayerState } from "../useTeamLayers";
 
 export function LayersPanel({
   open,
@@ -21,9 +21,11 @@ export function LayersPanel({
   return (
     <div
       data-testid="ops-layers-panel"
-      className="absolute right-3 top-12 z-[1000] w-64 rounded border border-line bg-panel/95 p-3 text-sm"
+      className="absolute right-3 top-12 z-[1000] w-64 rounded border border-line bg-panel p-3 text-sm"
     >
-      <div className="mb-2 text-xs uppercase tracking-wide text-text-dim">שכבות מפה</div>
+      <div className="mb-2 text-xs uppercase tracking-wide text-text-dim">
+        שכבות מפה
+      </div>
       {layers.length === 0 ? (
         <div className="text-text-dim">אין שכבות רשומות</div>
       ) : (
@@ -39,11 +41,34 @@ export function LayersPanel({
                   className="accent-current"
                   style={{ color: layer.colour }}
                 />
-                <span
-                  aria-hidden="true"
-                  className="inline-block h-2 w-2 shrink-0 rounded-full"
-                  style={{ background: layer.colour }}
-                />
+                {layer.id === "polygon" ? (
+                  <img
+                    src="/icons/poligon-marker.svg"
+                    alt=""
+                    aria-hidden="true"
+                    className="h-5 w-5 shrink-0"
+                  />
+                ) : layer.id === "red" ? (
+                  <img
+                    src="/icons/red-marker.svg"
+                    alt=""
+                    aria-hidden="true"
+                    className="h-5 w-5 shrink-0"
+                  />
+                ) : layer.id === "blue" ? (
+                  <img
+                    src="/icons/blue-marker.svg"
+                    alt=""
+                    aria-hidden="true"
+                    className="h-5 w-5 shrink-0"
+                  />
+                ) : (
+                  <span
+                    aria-hidden="true"
+                    className="inline-block h-2 w-2 shrink-0 rounded-full"
+                    style={{ background: layer.colour }}
+                  />
+                )}
                 <span>{layer.label}</span>
               </label>
             </li>

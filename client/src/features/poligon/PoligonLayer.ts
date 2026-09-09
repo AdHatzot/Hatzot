@@ -26,9 +26,9 @@ export async function mountPolygonLayer(
         const apiUrl = import.meta.env.VITE_API_URL ?? "";
         const response = await fetch(`${apiUrl}/api/alerts/cities`);
 
-        if (!response.ok) {
-            throw new Error(`Failed to fetch polygons: ${response.status}`);
-        }
+    if (!response.ok) {
+      throw new Error(`Failed to fetch polygons: ${response.status}`);
+    }
 
         const data: PolygonResponse = await response.json();
 
@@ -37,31 +37,28 @@ export async function mountPolygonLayer(
                 return;
             }
 
-            // GeoJSON: [longitude, latitude]
-            // Leaflet: [latitude, longitude]
-            const latLngs: L.LatLngExpression[][] =
-                feature.geometry.coordinates.map((ring) =>
-                    ring.map(([longitude, latitude]) => [latitude, longitude]),
-                );
+      // GeoJSON: [longitude, latitude]
+      // Leaflet: [latitude, longitude]
+      const latLngs: L.LatLngExpression[][] = feature.geometry.coordinates.map(
+        (ring) => ring.map(([longitude, latitude]) => [latitude, longitude]),
+      );
 
-            L.polygon(latLngs, {
-                color: "#3388ff",
-                weight: 2,
-                fillColor: "#3388ff",
-                fillOpacity: 0.25,
-            })
-                .bindPopup(
-                    `
-          <div>
-            <strong>${feature.properties.ENG_NAME ?? ""}</strong>
-            <br />
-            ${feature.properties.CITY_NAME ?? ""}
-          </div>
-        `,
-                )
-                .addTo(group);
-        });
-    } catch (error) {
-        console.error("Failed to load polygon layer:", error);
-    }
+      L.polygon(latLngs, {
+        color: "#a8a8a8",
+        weight: 2,
+        fillColor: "#a8a8a8",
+        fillOpacity: 0.25,
+      })
+        .bindPopup(
+          `
+  <div dir="rtl" style="font-size: 14px; font-weight: 700;">
+    ${feature.properties.CITY_NAME ?? ""}
+  </div>
+`,
+        )
+        .addTo(group);
+    });
+  } catch (error) {
+    console.error("Failed to load polygon layer:", error);
+  }
 }
