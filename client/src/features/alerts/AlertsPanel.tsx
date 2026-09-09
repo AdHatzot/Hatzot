@@ -35,7 +35,7 @@ export function AlertsPanel(): JSX.Element {
           className="flex-1 bg-panel py-2 text-sm text-text-dim"
           onClick={() => setIsActiveTab(false)}
         >
-          אירועים שופלו 0
+          אירועים שטופלו 0
         </button>
       </div>
 
