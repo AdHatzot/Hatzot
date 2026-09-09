@@ -56,7 +56,8 @@ CREATE TABLE hatzot.drone_type (
 -- DRONE
 -- ---------------------------------------------------------------------
 CREATE TABLE hatzot.drone (
-    id              uuid   GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    id              bigint    GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    drone_id        uuid      NOT NULL,
     drone_type_id   smallint  NOT NULL,
     heading         double precision,
     velocity        double precision,
@@ -240,10 +241,10 @@ INSERT INTO hatzot.drone_type (name, price) VALUES
     ('Falcon Long X4', 6800);
 
 -- Drones
-INSERT INTO hatzot.drone (drone_type_id, heading, velocity) VALUES
-    ((SELECT id FROM hatzot.drone_type WHERE name = 'SkyMite C7'), 45.0, 12.5),
-    ((SELECT id FROM hatzot.drone_type WHERE name = 'NanoSwarm-Q9'), 270.0, 38.2),
-    ((SELECT id FROM hatzot.drone_type WHERE name = 'LoadBee M2'), 90.0, 55.0);
+INSERT INTO hatzot.drone (drone_id, drone_type_id, heading, velocity) VALUES
+    ('361d66c0-b5f3-41ab-bd2f-287b96d5ad39', (SELECT id FROM hatzot.drone_type WHERE name = 'SkyMite C7'), 45.0, 12.5),
+    ('e71f98fa-76c5-4e39-b467-e9e20c62b3f1', (SELECT id FROM hatzot.drone_type WHERE name = 'NanoSwarm-Q9'), 270.0, 38.2),
+    ('620b50b8-040e-4390-8045-8c69ecb02de1', (SELECT id FROM hatzot.drone_type WHERE name = 'LoadBee M2'), 90.0, 55.0);
 
 -- Drone positions
 INSERT INTO hatzot.drone_position (drone_id, longitude, latitude, asl, agl, recorded_at) VALUES
