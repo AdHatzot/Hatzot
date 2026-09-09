@@ -8,7 +8,7 @@ import type { Identifiable } from "../../repository";
 import {
   Entity,
   Column,
-  ManyToOne,
+  OneToOne,
   JoinColumn,
   PrimaryGeneratedColumn,
 } from "typeorm";
@@ -22,7 +22,7 @@ export class DronePosition implements Identifiable {
   @Column({ type: "bigint" })
   droneId!: string;
 
-  @ManyToOne(() => Drone, { onDelete: "CASCADE", onUpdate: "CASCADE" })
+  @OneToOne(() => Drone, (drone) => drone.position)
   @JoinColumn({ name: "drone_id" })
   drone!: Drone;
 
