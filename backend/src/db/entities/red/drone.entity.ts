@@ -5,8 +5,16 @@
  * @updated  2026-09-09
  */
 import type { Identifiable } from "../../repository";
-import { Entity, PrimaryColumn, Column, ManyToOne, JoinColumn } from "typeorm";
+import {
+  Entity,
+  PrimaryColumn,
+  Column,
+  ManyToOne,
+  JoinColumn,
+  OneToOne,
+} from "typeorm";
 import { DroneType } from "./drone-type.entity";
+import { DronePosition } from "./drone-position.entity";
 
 @Entity("drone")
 export class Drone implements Identifiable {
@@ -16,6 +24,9 @@ export class Drone implements Identifiable {
   @ManyToOne(() => DroneType, { nullable: false })
   @JoinColumn({ name: "drone_type" })
   droneType!: DroneType;
+
+  @OneToOne(() => DronePosition, (position) => position.drone)
+  position?: DronePosition;
 
   @Column({ type: "numeric" })
   heading!: string;
