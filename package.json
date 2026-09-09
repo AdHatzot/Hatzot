@@ -1,6 +1,0 @@
-{
-  "dependencies": {
-    "reflect-metadata": "^0.2.2",
-    "typeorm": "^1.1.1"
-  }
-}
