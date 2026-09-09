@@ -1,4 +1,3 @@
-import { Crosshair } from "lucide-react";
 
 /**
  * @team     alerts
@@ -8,6 +7,7 @@ import { Crosshair } from "lucide-react";
  *
  */
 import { DroneRow } from "./DroneRow";
+import { CrosshairIcon } from "./CrosshairIcon";
 import { useState } from "react";
 import { Drone } from "@/types/drones";
 
@@ -50,7 +50,7 @@ export function AlertsPanel(): JSX.Element {
               className="flex items-center gap-1.5 text-sm font-medium text-red-400"
               onClick={() => alert("shoot all :)")}
             >
-              <Crosshair className="h-4 w-4" />
+              <CrosshairIcon className="h-4 w-4" />
               יירט הכל
             </button>
           </div>

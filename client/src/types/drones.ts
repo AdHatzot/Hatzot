@@ -1,4 +1,4 @@
-interface Drone {
+export interface Drone {
   type:string,
   id:string,
   timestamp:string,
