@@ -8,7 +8,7 @@
  * shared across teams. Event names follow `<team>:<entity>.<action>`.
  */
 
-export type Team = "red" | "blue" | "alerts" | "logistics" | "loop";
+export type Team = "red" | "blue" | "alerts" | "logistics" | "loop" | "polygon";
 
 export type Owner = Team | "core";
 
@@ -20,4 +20,5 @@ export const TEAM_LABELS: Readonly<Record<Team, string>> = {
   alerts: "התראות",
   logistics: "יצירת פריסה",
   loop: "סגירת מעגל",
+  polygon: "אזורים"
 };

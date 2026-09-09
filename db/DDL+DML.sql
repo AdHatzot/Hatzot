@@ -35,6 +35,7 @@ DROP TABLE IF EXISTS hatzot.drone_type CASCADE;
 CREATE TABLE hatzot.drone_type (
     id      smallint      GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     name    text          NOT NULL,
+    price   numeric       NOT NULL,
     CONSTRAINT uk_drone_type_name UNIQUE (name)
 );
 
@@ -161,10 +162,10 @@ BEGIN;
 
 -- Drone types
 INSERT INTO hatzot.drone_type (name) VALUES
-    ('SkyMite C7'),
-    ('NanoSwarm-Q9'),
-    ('LoadBee M2'),
-    ('Falcon Long X4');
+    ('SkyMite C7', 2500),
+    ('NanoSwarm-Q9', 8000),
+    ('LoadBee M2', 18000),
+    ('Falcon Long X4', 900);
 
 -- Drones
 INSERT INTO hatzot.drone (drone_type_id, heading, velocity) VALUES
