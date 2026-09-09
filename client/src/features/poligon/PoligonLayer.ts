@@ -1,7 +1,4 @@
-import L, {
-  type LayerGroup,
-  type Map as LeafletMap,
-} from "leaflet";
+import L, { type LayerGroup, type Map as LeafletMap } from "leaflet";
 
 interface PolygonFeature {
   type: "Feature";
@@ -31,9 +28,7 @@ export async function mountPolygonLayer(
     );
 
     if (!response.ok) {
-      throw new Error(
-        `Failed to fetch polygons: ${response.status}`,
-      );
+      throw new Error(`Failed to fetch polygons: ${response.status}`);
     }
 
     const data: PolygonResponse = await response.json();
@@ -45,13 +40,9 @@ export async function mountPolygonLayer(
 
       // GeoJSON: [longitude, latitude]
       // Leaflet: [latitude, longitude]
-      const latLngs: L.LatLngExpression[][] =
-        feature.geometry.coordinates.map((ring) =>
-          ring.map(([longitude, latitude]) => [
-            latitude,
-            longitude,
-          ]),
-        );
+      const latLngs: L.LatLngExpression[][] = feature.geometry.coordinates.map(
+        (ring) => ring.map(([longitude, latitude]) => [latitude, longitude]),
+      );
 
       L.polygon(latLngs, {
         color: "#a8a8a8",
@@ -59,19 +50,16 @@ export async function mountPolygonLayer(
         fillColor: "#a8a8a8",
         fillOpacity: 0.25,
       })
-        .bindPopup(`
-          <div>
-            <strong>${feature.properties.ENG_NAME ?? ""}</strong>
-            <br />
-            ${feature.properties.CITY_NAME ?? ""}
-          </div>
-        `)
+        .bindPopup(
+          `
+  <div dir="rtl" style="font-size: 26px; font-weight: 700;">
+    ${feature.properties.CITY_NAME ?? ""}
+  </div>
+`,
+        )
         .addTo(group);
     });
   } catch (error) {
-    console.error(
-      "Failed to load polygon layer:",
-      error,
-    );
+    console.error("Failed to load polygon layer:", error);
   }
 }
