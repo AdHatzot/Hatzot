@@ -9,14 +9,15 @@
 import { getSucessRate, interceptionsRepository } from "../repositories/interceptions.repository";
 import { InterceptionStatus } from "../db/entities/interception.entity";
 
-async function fetchInterceptionData(drones_id: number[]) {
-  const response = await fetch("", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ drones_id }),
-  });
-  return response.json();
-}
+// TODO: Un-comment once external API endpoint is available
+// async function fetchInterceptionData(drones_id: number[]) {
+//   const response = await fetch("", {
+//     method: "POST",
+//     headers: { "Content-Type": "application/json" },
+//     body: JSON.stringify({ drones_id }),
+//   });
+//   return response.json();
+// }
 
 const mockData = (drones_id: number[]) => {
   return drones_id.map((droneId) => ({
@@ -28,25 +29,23 @@ const mockData = (drones_id: number[]) => {
   }));
 };
 
-export async function createInterception(drones_id: number[]): Promise<void> {
+export async function createInterception(drones_id: number[]): Promise<any> {
   // TODO: replace mockData(drones_id) with a real API call once the endpoint exists,
   const interceptionData = mockData(drones_id);
 
-  const saves = interceptionData.map((data) =>
-    interceptionsRepository.save({
-      liveLauncherId: data.liveLauncherId,
-      interceptorTypeId: data.interceptorTypeId,
-      droneId: data.droneId,
-      launchedAt: new Date(),
-      interceptorLongitude: data.interceptorLongitude,
-      interceptorLatitude: data.interceptorLatitude,
-      status: InterceptionStatus.PENDING,
-      result: null,
-    }),
-  );
+  const saves = interceptionData.map((data) => ({
+    liveLauncherId: data.liveLauncherId,
+    interceptorTypeId: data.interceptorTypeId,
+    droneId: data.droneId,
+    launchedAt: new Date(),
+    interceptorLongitude: data.interceptorLongitude,
+    interceptorLatitude: data.interceptorLatitude,
+    status: InterceptionStatus.PENDING,
+    result: null,
+  }));
 
-  console.log(await Promise.all(saves));
-  await Promise.all(saves);
+  const saved = await interceptionsRepository.save(saves);
+  return saved;
 }
 
 export async function getDidIntercept(InterceptionId: number): Promise<boolean> {

@@ -1,27 +1,34 @@
-import { Entity, PrimaryGeneratedColumn, Column } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from "typeorm";
+import { LauncherAmmunition } from "./launcherAmmunition.entity";
 
 export interface SuccessRateEntry {
   droneType: string;
   successRate: number;
 }
 
-@Entity("interceptor_type")
+@Entity({ schema: "hatzot", name: "interceptor_type" })
 export class InterceptorType {
-  @PrimaryGeneratedColumn({ name: "id" })
+  @PrimaryGeneratedColumn({ type: "smallint" })
   id!: number;
 
-  @Column({ name: "name", type: "text" })
+  @Column({ type: "text", unique: true })
   name!: string;
 
-  @Column({ name: "range_m", type: "integer" })
+  @Column({ type: "integer", name: "range_m", nullable: true })
   rangeM!: number;
 
-  @Column({ name: "price", type: "integer" })
+  @Column({ type: "integer", nullable: true })
   price!: number;
 
-  @Column({ name: "estimated_success_rate", type: "jsonb" })
+  @Column({ type: "jsonb", name: "estimated_success_rate", nullable: true })
   estimatedSuccessRate!: SuccessRateEntry[];
 
-  @Column({ name: "capacity", type: "smallint" })
+  @Column({ type: "smallint", nullable: true })
   capacity!: number;
+
+  @OneToMany(
+    () => LauncherAmmunition,
+    (launcherAmmunition) => launcherAmmunition.interceptorType
+  )
+  launcherAmmunitions!: LauncherAmmunition[];
 }

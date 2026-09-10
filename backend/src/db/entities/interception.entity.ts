@@ -1,5 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from "typeorm";
-import { InterceptorType } from "./interceptorType.entity";
+import { InterceptorType } from "./InterceptorType.entity";
 import { Drone } from "./drone.entity";
 
 export enum InterceptionStatus {

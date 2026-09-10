@@ -16,5 +16,5 @@ export async function createInterception(
 ): Promise<void> {
   const { drones_id } = req.body;
 
-  res.json(await interceptionsService.createInterception(drones_id));
+  res.status(201).json(await interceptionsService.createInterception(drones_id));
 }
