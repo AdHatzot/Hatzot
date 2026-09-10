@@ -11,7 +11,7 @@ export async function getAllDrones(): Promise<Drone[]> {
   });
 }
 
-/** Save many drones to the repository (upsert). */
-export async function saveDrones(drones: Drone[]): Promise<Drone[]> {
-  return await droneRepository.save(drones);
+/** Save many drones to the repository (batch upsert based on droneId). */
+export async function saveDrones(drones: Drone[]): Promise<void> {
+  await droneRepository.upsert(drones, ["droneId"]);
 }
