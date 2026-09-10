@@ -5,7 +5,7 @@
 --
 -- CHANGES IN v2 (integrating the new INTERCEPTION entity from the ERD):
 --   * hatzot.drone_type          + price column
---   * hatzot.live_launcher       + range, status columns (new launcher_status enum)
+--   * hatzot.live_launcher       + status column (new launcher_status enum)
 --   * NEW hatzot.interception    the launch of one interceptor at one drone,
 --                                 fired FROM a stocked (launcher, interceptor_type)
 --                                 pair in launcher_ammunition, and targeted AT a drone.
@@ -122,7 +122,6 @@ CREATE TABLE hatzot.live_launcher (
     agl                 double precision,
     amount              integer,
     active              boolean     NOT NULL DEFAULT true,
-    range               integer,
     status              hatzot.launcher_status NOT NULL DEFAULT 'DRAFT',
     CONSTRAINT fk_live_launcher_launcher_type
         FOREIGN KEY (launcher_type_id) REFERENCES hatzot.launcher_type (id),
@@ -266,35 +265,35 @@ INSERT INTO hatzot.deployment (name, status) VALUES
     ('Coastal Sector', 'Saved');
 
 -- Live launchers
-INSERT INTO hatzot.live_launcher (launcher_type_id, deployment_id, longitude, latitude, asl, agl, amount, range, status) VALUES
-    ((SELECT id FROM hatzot.launcher_type WHERE name = 'ShieldNest-Lite'), 1, 35.2845, 33.0512, 480.0, 5.5, 8, 40000, 'ACTIVE'),
-    ((SELECT id FROM hatzot.launcher_type WHERE name = 'ShieldNest-Lite'), 1, 35.195, 32.8341, 210.0, 6.2, 8, 40000, 'ACTIVE'),
-    ((SELECT id FROM hatzot.launcher_type WHERE name = 'ShieldNest-Lite'), 2, 34.981, 32.482, 65.0, 4.8, 6, 40000, 'SAVED'),
-    ((SELECT id FROM hatzot.launcher_type WHERE name = 'ShieldNest-Lite'), 2, 34.8821, 32.0834, 45.0, 8.0, 6, 40000, 'SAVED'),
-    ((SELECT id FROM hatzot.launcher_type WHERE name = 'ShieldNest-Lite'), 2, 34.8412, 31.7825, 115.0, 5.0, 6, 40000, 'SAVED'),
-    ((SELECT id FROM hatzot.launcher_type WHERE name = 'ShieldNest-Lite'), 2, 34.612, 31.5432, 95.0, 4.5, 4, 40000, 'SAVED'),
-    ((SELECT id FROM hatzot.launcher_type WHERE name = 'ShieldNest-Lite'), 2, 34.7215, 31.334, 180.0, 7.1, 4, 40000, 'SAVED'),
-    ((SELECT id FROM hatzot.launcher_type WHERE name = 'ShieldNest-Lite'), 2, 34.895, 31.1215, 320.0, 5.2, 4, 40000, 'SAVED'),
-    ((SELECT id FROM hatzot.launcher_type WHERE name = 'IronHook-SR'), 1, 35.572, 33.185, 520.0, 8.5, 12, 60000, 'ACTIVE'),
-    ((SELECT id FROM hatzot.launcher_type WHERE name = 'IronHook-SR'), 1, 35.145, 32.712, 140.0, 10.0, 10, 60000, 'ACTIVE'),
-    ((SELECT id FROM hatzot.launcher_type WHERE name = 'IronHook-SR'), 2, 34.935, 32.221, 55.0, 9.2, 10, 60000, 'SAVED'),
-    ((SELECT id FROM hatzot.launcher_type WHERE name = 'IronHook-SR'), 2, 34.698, 31.685, 85.0, 6.8, 8, 60000, 'SAVED'),
-    ((SELECT id FROM hatzot.launcher_type WHERE name = 'IronHook-SR'), 2, 34.851, 31.425, 260.0, 11.4, 8, 60000, 'SAVED'),
-    ((SELECT id FROM hatzot.launcher_type WHERE name = 'IronHook-SR'), 2, 34.931, 30.985, 510.0, 7.5, 6, 60000, 'SAVED'),
-    ((SELECT id FROM hatzot.launcher_type WHERE name = 'HorizonEye-MX'), 1, 35.421, 32.981, 780.0, 12.0, 4, 25000, 'ACTIVE'),
-    ((SELECT id FROM hatzot.launcher_type WHERE name = 'HorizonEye-MX'), 1, 34.992, 32.355, 95.0, 14.5, 4, 25000, 'ACTIVE'),
-    ((SELECT id FROM hatzot.launcher_type WHERE name = 'HorizonEye-MX'), 2, 34.975, 31.852, 245.0, 11.0, 3, 25000, 'SAVED'),
-    ((SELECT id FROM hatzot.launcher_type WHERE name = 'HorizonEye-MX'), 2, 34.795, 31.258, 310.0, 13.2, 3, 25000, 'SAVED'),
-    ((SELECT id FROM hatzot.launcher_type WHERE name = 'CloudFence-Area'), 1, 35.591, 33.221, 620.0, 4.0, 16, 80000, 'ACTIVE'),
-    ((SELECT id FROM hatzot.launcher_type WHERE name = 'CloudFence-Area'), 1, 35.295, 32.915, 290.0, 3.5, 16, 80000, 'ACTIVE'),
-    ((SELECT id FROM hatzot.launcher_type WHERE name = 'CloudFence-Area'), 1, 35.289, 32.612, 110.0, 4.2, 14, 80000, 'ACTIVE'),
-    ((SELECT id FROM hatzot.launcher_type WHERE name = 'CloudFence-Area'), 2, 34.921, 32.435, 35.0, 5.0, 14, 80000, 'SAVED'),
-    ((SELECT id FROM hatzot.launcher_type WHERE name = 'CloudFence-Area'), 2, 34.852, 32.145, 40.0, 3.8, 12, 80000, 'SAVED'),
-    ((SELECT id FROM hatzot.launcher_type WHERE name = 'CloudFence-Area'), 2, 35.012, 31.892, 220.0, 4.6, 12, 80000, 'SAVED'),
-    ((SELECT id FROM hatzot.launcher_type WHERE name = 'CloudFence-Area'), 2, 34.582, 31.671, 50.0, 3.2, 10, 80000, 'SAVED'),
-    ((SELECT id FROM hatzot.launcher_type WHERE name = 'CloudFence-Area'), 2, 34.621, 31.485, 105.0, 4.0, 10, 80000, 'SAVED'),
-    ((SELECT id FROM hatzot.launcher_type WHERE name = 'CloudFence-Area'), 2, 35.205, 31.251, 580.0, 5.5, 8, 80000, 'SAVED'),
-    ((SELECT id FROM hatzot.launcher_type WHERE name = 'CloudFence-Area'), 2, 34.805, 30.612, 860.0, 4.8, 8, 80000, 'SAVED');
+INSERT INTO hatzot.live_launcher (launcher_type_id, deployment_id, longitude, latitude, asl, agl, amount, status) VALUES
+    ((SELECT id FROM hatzot.launcher_type WHERE name = 'ShieldNest-Lite'), 1, 35.2845, 33.0512, 480.0, 5.5, 8, 'ACTIVE'),
+    ((SELECT id FROM hatzot.launcher_type WHERE name = 'ShieldNest-Lite'), 1, 35.195, 32.8341, 210.0, 6.2, 8, 'ACTIVE'),
+    ((SELECT id FROM hatzot.launcher_type WHERE name = 'ShieldNest-Lite'), 2, 34.981, 32.482, 65.0, 4.8, 6, 'SAVED'),
+    ((SELECT id FROM hatzot.launcher_type WHERE name = 'ShieldNest-Lite'), 2, 34.8821, 32.0834, 45.0, 8.0, 6, 'SAVED'),
+    ((SELECT id FROM hatzot.launcher_type WHERE name = 'ShieldNest-Lite'), 2, 34.8412, 31.7825, 115.0, 5.0, 6, 'SAVED'),
+    ((SELECT id FROM hatzot.launcher_type WHERE name = 'ShieldNest-Lite'), 2, 34.612, 31.5432, 95.0, 4.5, 4, 'SAVED'),
+    ((SELECT id FROM hatzot.launcher_type WHERE name = 'ShieldNest-Lite'), 2, 34.7215, 31.334, 180.0, 7.1, 4, 'SAVED'),
+    ((SELECT id FROM hatzot.launcher_type WHERE name = 'ShieldNest-Lite'), 2, 34.895, 31.1215, 320.0, 5.2, 4, 'SAVED'),
+    ((SELECT id FROM hatzot.launcher_type WHERE name = 'IronHook-SR'), 1, 35.572, 33.185, 520.0, 8.5, 12, 'ACTIVE'),
+    ((SELECT id FROM hatzot.launcher_type WHERE name = 'IronHook-SR'), 1, 35.145, 32.712, 140.0, 10.0, 10, 'ACTIVE'),
+    ((SELECT id FROM hatzot.launcher_type WHERE name = 'IronHook-SR'), 2, 34.935, 32.221, 55.0, 9.2, 10, 'SAVED'),
+    ((SELECT id FROM hatzot.launcher_type WHERE name = 'IronHook-SR'), 2, 34.698, 31.685, 85.0, 6.8, 8, 'SAVED'),
+    ((SELECT id FROM hatzot.launcher_type WHERE name = 'IronHook-SR'), 2, 34.851, 31.425, 260.0, 11.4, 8, 'SAVED'),
+    ((SELECT id FROM hatzot.launcher_type WHERE name = 'IronHook-SR'), 2, 34.931, 30.985, 510.0, 7.5, 6, 'SAVED'),
+    ((SELECT id FROM hatzot.launcher_type WHERE name = 'HorizonEye-MX'), 1, 35.421, 32.981, 780.0, 12.0, 4, 'ACTIVE'),
+    ((SELECT id FROM hatzot.launcher_type WHERE name = 'HorizonEye-MX'), 1, 34.992, 32.355, 95.0, 14.5, 4, 'ACTIVE'),
+    ((SELECT id FROM hatzot.launcher_type WHERE name = 'HorizonEye-MX'), 2, 34.975, 31.852, 245.0, 11.0, 3, 'SAVED'),
+    ((SELECT id FROM hatzot.launcher_type WHERE name = 'HorizonEye-MX'), 2, 34.795, 31.258, 310.0, 13.2, 3, 'SAVED'),
+    ((SELECT id FROM hatzot.launcher_type WHERE name = 'CloudFence-Area'), 1, 35.591, 33.221, 620.0, 4.0, 16, 'ACTIVE'),
+    ((SELECT id FROM hatzot.launcher_type WHERE name = 'CloudFence-Area'), 1, 35.295, 32.915, 290.0, 3.5, 16, 'ACTIVE'),
+    ((SELECT id FROM hatzot.launcher_type WHERE name = 'CloudFence-Area'), 1, 35.289, 32.612, 110.0, 4.2, 14, 'ACTIVE'),
+    ((SELECT id FROM hatzot.launcher_type WHERE name = 'CloudFence-Area'), 2, 34.921, 32.435, 35.0, 5.0, 14, 'SAVED'),
+    ((SELECT id FROM hatzot.launcher_type WHERE name = 'CloudFence-Area'), 2, 34.852, 32.145, 40.0, 3.8, 12, 'SAVED'),
+    ((SELECT id FROM hatzot.launcher_type WHERE name = 'CloudFence-Area'), 2, 35.012, 31.892, 220.0, 4.6, 12, 'SAVED'),
+    ((SELECT id FROM hatzot.launcher_type WHERE name = 'CloudFence-Area'), 2, 34.582, 31.671, 50.0, 3.2, 10, 'SAVED'),
+    ((SELECT id FROM hatzot.launcher_type WHERE name = 'CloudFence-Area'), 2, 34.621, 31.485, 105.0, 4.0, 10, 'SAVED'),
+    ((SELECT id FROM hatzot.launcher_type WHERE name = 'CloudFence-Area'), 2, 35.205, 31.251, 580.0, 5.5, 8, 'SAVED'),
+    ((SELECT id FROM hatzot.launcher_type WHERE name = 'CloudFence-Area'), 2, 34.805, 30.612, 860.0, 4.8, 8, 'SAVED');
 
 -- Interceptor types
 INSERT INTO hatzot.interceptor_type (name, range_m, price, estimated_success_rate, capacity) VALUES
