@@ -11,7 +11,7 @@ import type { LayerGroup, Map as LeafletMap } from 'leaflet';
 import type { Team } from '@/types/events';
 
 export interface TeamMapLayer {
-  id: Team;
+  id: Team ;
   label: string;
   colour: string;
   defaultVisible: boolean;
