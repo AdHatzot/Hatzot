@@ -42,6 +42,8 @@ export async function createInterception(
   drones_id: number[],
 ): Promise<Interception[]> {
   // TODO: replace mockData(drones_id) with a real API call once the endpoint exists,
+
+  // TODO: medium-check if an active interception exists for the given drone_id
   const interceptionData = mockData(drones_id);
 
   const saves: Partial<Interception>[] = interceptionData.map((data) => ({
@@ -51,7 +53,7 @@ export async function createInterception(
     launchedAt: new Date(),
     interceptorLongitude: data.interceptorLongitude,
     interceptorLatitude: data.interceptorLatitude,
-    status: InterceptionStatus.PENDING,
+    status: InterceptionStatus.IN_PROGRESS,
     priority: data.priority,
     result: null,
   }));
