@@ -17,12 +17,10 @@ export const alertsRoutes: Router = Router();
 alertsRoutes.get("/", asyncHandler(alerts.getStatus));
 alertsRoutes.get("/status", asyncHandler(alerts.getAlertStatus));
 alertsRoutes.get("/cities", asyncHandler(alerts.getCityZones));
-<<<<<<< HEAD
 alertsRoutes.get(
     "/cities/alertable",
     asyncHandler(alerts.getAlertableCityZones),
 );
-
 alertsRoutes.get(
     "/cities/able",
     asyncHandler(alerts.getAbleCityZones),
@@ -39,15 +37,3 @@ alertsRoutes.get(
     "/cities/intersections",
     asyncHandler(alerts.getAbleCityZones),
 );
-=======
-alertsRoutes.post(
-  "/cities/intersections",
-  asyncHandler(alerts.getIntersectingCityZones),
-);
-alertsRoutes.post(
-  "/cities/alertable",
-  asyncHandler(alerts.getAlertableCityZones),
-);
-
-
->>>>>>> 0a9665933dc5e23e1ce622dcd32cbcb8d0ab1980
