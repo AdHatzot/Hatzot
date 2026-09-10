@@ -11,6 +11,33 @@ import type { Request, Response } from "express";
 import * as logisticsService from "../services/logistics.service";
 import { HttpError } from "../shared/httpError";
 
+export const getAllLaunchers = async (
+  _req: Request,
+  res: Response,
+) => {
+  const launchers = await logisticsService.getAllLaunchers();
+
+  res.status(200).json(launchers);
+}
+
+export const getLauncherById = async (
+  req: Request,
+  res: Response,
+) => {
+  const launcher = await logisticsService.getLauncherById(
+    req.params.id,
+  );
+
+  if (!launcher) {
+    res.status(404).json({
+      message: "Launcher not found",
+    });
+    return;
+  }
+
+  res.status(200).json(launcher);
+}
+
 export async function getStatus(_req: Request, res: Response): Promise<void> {
   res.json(await logisticsService.getStatus());
 }

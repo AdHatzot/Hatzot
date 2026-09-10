@@ -23,6 +23,8 @@ import {
 } from "../repositories/logistics.repository";
 import { LauncherType } from "../db/entities/launcherType.entity";
 import { InterceptorType } from "../db/entities/InterceptorType.entity";
+import { LauncherData } from "../utils/LiveLauncherTypes";
+import * as logisticsRepository from "../repositories/logistics.repository";
 
 export async function getStatus(): Promise<{ team: Team; status: string }> {
   return { team: "logistics", status: "empty" };
@@ -111,3 +113,35 @@ export async function getAllLauncherTypes(): Promise<Array<LauncherType>> {
 export async function getAllInterceptorTypes(): Promise<Array<InterceptorType>> {
   return await logisticsInterceptorTypeRepository.find();
 }
+
+const mapLauncher = (launcher: LiveLauncher): LauncherData => {
+  return {
+    id: launcher.id,
+    name: launcher.launcherType.name,
+    location: {
+      lat: launcher.latitude,
+      long: launcher.longitude,
+    },
+    range: launcher.launcherType.rangeM,
+    interceptors: launcher.launcherAmmunitions.map((ammunition) => ({
+      name: ammunition.interceptorType.name,
+      amount: ammunition.quantity,
+    })),
+  };
+};
+
+export const getAllLaunchers = async (): Promise<LauncherData[]> => {
+  const launchers = await logisticsRepository.getLunchersFromDb();
+
+  return launchers.map(mapLauncher);
+};
+
+export const getLauncherById = async (id: string): Promise<LauncherData | null> => {
+  const launcher = await logisticsRepository.getLauncherFromDb(id);
+
+  if(!launcher) {
+    return null;
+  }
+
+  return mapLauncher(launcher);
+};
