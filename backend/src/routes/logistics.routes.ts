@@ -15,5 +15,5 @@ export const logisticsRoutes: Router = Router();
 
 logisticsRoutes.get("/", asyncHandler(logistics.getStatus));
 logisticsRoutes.get("/all", asyncHandler(logistics.getAll));
-logisticsRoutes.get("/launchers/:id", asyncHandler(logistics.getLiveDeployments));
+logisticsRoutes.get("/launcher/:id", asyncHandler(logistics.getLiveDeployments));
 logisticsRoutes.post("/fireIntercept", asyncHandler(logistics.fireIntercept));
