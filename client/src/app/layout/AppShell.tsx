@@ -13,7 +13,7 @@ import { MapShell } from "@/map/MapShell";
 
 export function AppShell(): JSX.Element {
   const { pathname } = useLocation();
-  const isOps = pathname === "/";
+  const isMapVisible = pathname === "/" || pathname === "/logistics";
 
   return (
     <div className="flex h-full w-full flex-col overflow-hidden bg-bg text-text">
@@ -21,7 +21,7 @@ export function AppShell(): JSX.Element {
       <div className="flex min-h-0 flex-1">
         <SidebarStart />
         <main className="relative min-w-0 flex-1">
-          <MapShell visible={isOps} />
+          <MapShell visible={isMapVisible} />
           <Outlet />
         </main>
         <SidebarEnd />

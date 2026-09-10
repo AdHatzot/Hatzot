@@ -22,10 +22,13 @@ import { loopRoutes } from "./routes/loop.routes";
 import { startBlueReloadTicker } from "./services/blue.service";
 
 const PORT = Number(process.env.PORT ?? 3000);
-const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN ?? "http://localhost:5173";
+const ALLOWED_ORIGINS = [
+  process.env.CLIENT_ORIGIN ?? "http://localhost:5173",
+  "http://localhost:5174",
+];
 
 const app = express();
-app.use(cors({ origin: CLIENT_ORIGIN }));
+app.use(cors({ origin: ALLOWED_ORIGINS }));
 app.use(express.json());
 
 app.get("/health", (_req, res) => {

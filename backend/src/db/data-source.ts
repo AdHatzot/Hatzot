@@ -28,6 +28,13 @@
  */
 import { DataSource } from "typeorm";
 import config from "../config";
+import { Deployment } from "./entities/deployment.entity";
+import { LiveLauncher } from "./entities/liveLauncher.entity";
+import { LauncherType } from "./entities/launcherType.entity";
+import { LauncherAmmunition } from "./entities/launcherAmmunition.entity";
+import { InterceptorType } from "./entities/InterceptorType.entity";
+import { Drone } from "./entities/drone.entity";
+import { DronePosition } from "./entities/dronePosition.entity";
 
 //add to .env
 // PORT=3000
@@ -41,7 +48,15 @@ import config from "../config";
 
 export const dataSource = new DataSource({
   type: "postgres",
-  entities: ["src/db/entities/*.ts"],
+  entities: [
+    Deployment,
+    LiveLauncher,
+    LauncherType,
+    LauncherAmmunition,
+    InterceptorType,
+    Drone,
+    DronePosition,
+  ],
   synchronize: false,
   host: config.DB_HOST,
   port: config.DB_PORT,
@@ -52,9 +67,9 @@ export const dataSource = new DataSource({
   logging: false,
   migrations: ["dist/db/migrations/*.js"],
   subscribers: [],
-  ssl: config.NODE_ENV === "production" || config.NODE_ENV === "development",
+  ssl: false,
 });
-  
+
 export function isDatabaseConfigured(): boolean {
   const url = process.env.DB_URL;
   return url !== undefined && url.length > 0;
