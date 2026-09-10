@@ -2,7 +2,7 @@ import type { TeamMapLayer } from "@/shared/contracts";
 import { mountInterceptionLayer } from "./InterceptionLayer"
 
 export const interceptionLayer: TeamMapLayer = {
-  id: "interception",
+  id: "loop",
   label: "יירוטים",
   colour: "#ffffff",
   defaultVisible: true,
