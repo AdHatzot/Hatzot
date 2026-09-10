@@ -4,11 +4,10 @@
  * @public   yes
  * @updated  2026-09-09
  */
-import type { Identifiable } from "../../repository";
 import { Entity, PrimaryGeneratedColumn, Column } from "typeorm";
 
 @Entity("drone_type")
-export class DroneType implements Identifiable {
+export class DroneType {
   @PrimaryGeneratedColumn()
   id!: number;
 

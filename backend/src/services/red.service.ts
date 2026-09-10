@@ -115,5 +115,5 @@ export function startRedFetchDronesJob(): void {
     } catch (error) {
       console.error("Error fetching drones from API:", error);
     }
-  }, 2000);
+  }, 1000);
 }
