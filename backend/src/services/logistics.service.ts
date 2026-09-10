@@ -9,44 +9,58 @@
  * via broadcast() from ../ws. No Express types in here.
  */
 import type { Team } from "../types";
-import { logisticsDeploymentRepository, logisticsLiveLauncherRepository } from "../repositories/logistics.repository";
+import { dataSource } from "../db/data-source";
+import { LiveLauncher } from "../db/entities/liveLauncher.entity";
+import {
+  fireIntercept as fireInterceptInRepository,
+  logisticsDeploymentRepository,
+  logisticsLiveLauncherRepository,
+  type FireInterceptRequest,
+} from "../repositories/logistics.repository";
 
 export async function getStatus(): Promise<{ team: Team; status: string }> {
   return { team: "logistics", status: "empty" };
 }
 
-
-export async function getAll() {
+export async function getAll(): Promise<unknown[]> {
   return await logisticsDeploymentRepository.find();
 }
 
-export async function getLiveDeployments(deploymentId: number) {
+export async function getLiveDeployments(
+  deploymentId: number
+): Promise<
+  Array<{
+    deployment: unknown;
+    launcherId: string;
+    location: {
+      latitude: number | null;
+      longitude: number | null;
+      asl: number | null;
+      agl: number | null;
+    };
+    ammunitionAmount: number;
+  }>
+> {
   const results = await logisticsLiveLauncherRepository
     .createQueryBuilder("launcher")
-    // Join and load the full Deployment entity
     .innerJoinAndSelect("launcher.deployment", "deployment")
-    // Left join ammunition table to sum the quantity
     .leftJoin("launcher.launcherAmmunitions", "ammunition")
     .where("deployment.id = :deploymentId", { deploymentId })
     .select([
-      // Deployment entity fields
       "deployment.id",
       "deployment.name",
       "deployment.status",
-      // LiveLauncher location & identifier fields
       "launcher.id",
       "launcher.latitude",
       "launcher.longitude",
       "launcher.asl",
       "launcher.agl",
-      // Sum the total ammunition quantity for this launcher
-      "COALESCE(SUM(ammunition.quantity), 0) AS total_ammunition_quantity"
+      "COALESCE(SUM(ammunition.quantity), 0) AS total_ammunition_quantity",
     ])
     .groupBy("launcher.id")
     .addGroupBy("deployment.id")
     .getRawAndEntities();
 
-  // Custom mapping if you want clean structured objects:
   return results.entities.map((entity, index) => ({
     deployment: entity.deployment,
     launcherId: entity.id,
@@ -56,6 +70,26 @@ export async function getLiveDeployments(deploymentId: number) {
       asl: entity.asl,
       agl: entity.agl,
     },
-    ammunitionAmount: Number(results.raw[index].total_ammunition_quantity),
+    ammunitionAmount: Number(results.raw[index]?.total_ammunition_quantity ?? 0),
   }));
+}
+
+export async function fireIntercept(
+  request: FireInterceptRequest
+): Promise<{ launcherId: string; interceptorTypeId: number }> {
+  const result = await fireInterceptInRepository(request);
+
+  setTimeout(() => {
+    void dataSource
+      .getRepository(LiveLauncher)
+      .update({ id: result.launcherId }, { active: true })
+      .catch((error: unknown) => {
+        console.error("Failed to reactivate launcher", error);
+      });
+  }, result.reloadTimeS * 1000);
+
+  return {
+    launcherId: result.launcherId,
+    interceptorTypeId: result.interceptorTypeId,
+  };
 }

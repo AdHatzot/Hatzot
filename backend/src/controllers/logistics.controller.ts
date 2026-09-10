@@ -21,3 +21,37 @@ export async function getAll(_req: Request, res: Response): Promise<void> {
 export async function getLiveDeployments(req: Request<{ id: number }>, res: Response): Promise<void> {
   res.json(await logisticsService.getLiveDeployments(req.params.id));
 }
+export async function fireIntercept(req: Request, res: Response): Promise<void> {
+  const { launcher_id: launcherId, interceptor_type_id: interceptorTypeId } =
+    req.body as {
+      launcher_id?: unknown;
+      interceptor_type_id?: unknown;
+    };
+
+  if (
+    (typeof launcherId !== "string" && typeof launcherId !== "number") ||
+    (typeof launcherId === "number" && !Number.isInteger(launcherId)) ||
+    (typeof interceptorTypeId !== "number" &&
+      typeof interceptorTypeId !== "string") ||
+    (typeof interceptorTypeId === "string" &&
+      !Number.isInteger(Number(interceptorTypeId))) ||
+    (typeof interceptorTypeId === "number" &&
+      !Number.isInteger(interceptorTypeId)) ||
+    (typeof interceptorTypeId === "string" && interceptorTypeId.trim() === "") ||
+    (typeof launcherId === "string" && launcherId.trim() === "") ||
+    Number(interceptorTypeId) < 1 ||
+    Number.isNaN(Number(interceptorTypeId))
+  ) {
+    res.status(400).json({
+      error: "launcher_id and interceptor_type_id are required",
+    });
+    return;
+  }
+
+  res.json(
+    await logisticsService.fireIntercept({
+      launcherId: String(launcherId),
+      interceptorTypeId: Number(interceptorTypeId),
+    })
+  );
+}
