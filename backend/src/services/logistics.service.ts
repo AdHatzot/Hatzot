@@ -9,20 +9,42 @@
  * via broadcast() from ../ws. No Express types in here.
  */
 import type { Team } from "../types";
+import {
+  fireIntercept as fireInterceptInRepository,
+  type FireInterceptRequest,
+} from "../repositories/logistics.repository";
 import { dataSource } from "../db/data-source";
 import { LiveLauncher } from "../db/entities/liveLauncher.entity";
 import {
-  fireIntercept as fireInterceptInRepository,
   logisticsDeploymentRepository,
   logisticsLiveLauncherRepository,
-  type FireInterceptRequest,
 } from "../repositories/logistics.repository";
 
 export async function getStatus(): Promise<{ team: Team; status: string }> {
   return { team: "logistics", status: "empty" };
 }
 
-export async function getAll(): Promise<unknown[]> {
+export async function fireIntercept(
+  request: FireInterceptRequest,
+): Promise<{ launcherId: number; interceptorTypeId: number }> {
+  const result = await fireInterceptInRepository(request);
+
+  setTimeout(() => {
+    void dataSource
+      .getRepository(LiveLauncher)
+      .update({ id: String(result.launcherId) }, { active: true })
+      .catch((error: unknown) => {
+        console.error("Failed to reactivate launcher", error);
+      });
+  }, result.reloadTimeS * 1000);
+
+  return {
+    launcherId: Number(result.launcherId),
+    interceptorTypeId: result.interceptorTypeId,
+  };
+}
+
+export async function getAll() {
   return await logisticsDeploymentRepository.find();
 }
 
@@ -55,6 +77,7 @@ export async function getLiveDeployments(
       "launcher.longitude",
       "launcher.asl",
       "launcher.agl",
+      // Sum the total ammunition quantity for this launcher
       "COALESCE(SUM(ammunition.quantity), 0) AS total_ammunition_quantity",
     ])
     .groupBy("launcher.id")
@@ -72,24 +95,4 @@ export async function getLiveDeployments(
     },
     ammunitionAmount: Number(results.raw[index]?.total_ammunition_quantity ?? 0),
   }));
-}
-
-export async function fireIntercept(
-  request: FireInterceptRequest
-): Promise<{ launcherId: string; interceptorTypeId: number }> {
-  const result = await fireInterceptInRepository(request);
-
-  setTimeout(() => {
-    void dataSource
-      .getRepository(LiveLauncher)
-      .update({ id: result.launcherId }, { active: true })
-      .catch((error: unknown) => {
-        console.error("Failed to reactivate launcher", error);
-      });
-  }, result.reloadTimeS * 1000);
-
-  return {
-    launcherId: result.launcherId,
-    interceptorTypeId: result.interceptorTypeId,
-  };
 }

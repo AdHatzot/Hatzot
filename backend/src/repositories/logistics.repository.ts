@@ -16,13 +16,13 @@
 
 // import { createRepository, type Repository } from "../db";
 import { Deployment } from "../db/entities/deployment.entity";
-import { LiveLauncher } from "../db/entities/liveLauncher.entity";
 import { dataSource } from "../db/data-source";
 import { LauncherAmmunition } from "../db/entities/launcherAmmunition.entity";
+import { LiveLauncher } from "../db/entities/liveLauncher.entity";
+import { HttpError } from "../shared/httpError";
 
-export const logisticsLiveLauncherRepository = dataSource.getRepository(LiveLauncher);
 export interface FireInterceptRequest {
-  launcherId: string;
+  launcherId: number;
   interceptorTypeId: number;
 }
 
@@ -34,9 +34,11 @@ export interface FireInterceptResult {
 
 export const logisticsDeploymentRepository =
   dataSource.getRepository(Deployment);
+export const logisticsLiveLauncherRepository =
+  dataSource.getRepository(LiveLauncher);
 
 export async function fireIntercept(
-  request: FireInterceptRequest
+  request: FireInterceptRequest,
 ): Promise<FireInterceptResult> {
   return dataSource.transaction(async (manager) => {
     const ammunition = await manager
@@ -54,24 +56,24 @@ export async function fireIntercept(
       .getOne();
 
     if (ammunition === null) {
-      throw new Error("Ammunition was not found for this launcher");
+      throw new HttpError(404, "No launcher with this interceptor was found");
     }
 
     const launcher = ammunition.launcher;
     if (launcher === undefined) {
-      throw new Error("Launcher was not found");
+      throw new HttpError(404, "Launcher was not found");
     }
 
     if (launcher.launcherType === undefined) {
-      throw new Error("Launcher type was not found");
+      throw new HttpError(404, "Launcher type was not found");
     }
 
     if (!launcher.active) {
-      throw new Error("Launcher is reloading");
+      throw new HttpError(409, "Launcher is reloading");
     }
 
     if ((ammunition.quantity ?? 0) < 1) {
-      throw new Error("No ammunition available");
+      throw new HttpError(409, "Interceptor has no ammunition");
     }
 
     ammunition.quantity -= 1;

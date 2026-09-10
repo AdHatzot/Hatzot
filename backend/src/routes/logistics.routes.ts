@@ -14,6 +14,9 @@ import { asyncHandler } from "../shared/asyncHandler";
 export const logisticsRoutes: Router = Router();
 
 logisticsRoutes.get("/", asyncHandler(logistics.getStatus));
+logisticsRoutes.post("/fire-intercept", asyncHandler(logistics.fireIntercept));
 logisticsRoutes.get("/all", asyncHandler(logistics.getAll));
-logisticsRoutes.get("/launcher/:id", asyncHandler(logistics.getLiveDeployments));
-logisticsRoutes.post("/fireIntercept", asyncHandler(logistics.fireIntercept));
+logisticsRoutes.get(
+  "/live-deployment/:id",
+  asyncHandler(logistics.getLiveDeployments),
+);
