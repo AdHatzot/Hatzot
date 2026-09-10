@@ -8,10 +8,13 @@
  * goes through repositories/alerts.repository.ts only; live changes go out
  * via broadcast() from ../ws. No Express types in here.
  */
-import type { Team } from "../types";
 import type { Location } from "../types";
 import { createClient, type RedisClientType } from "redis";
 import { getDrones } from "./drones.service";
+import {
+    getAlertStatus as getAlertStatusFromRepository,
+    type AlertStatus,
+} from "../repositories/alerts.repository";
 import { readFile } from "fs/promises";
 import booleanIntersects from "@turf/boolean-intersects";
 import booleanPointInPolygon from "@turf/boolean-point-in-polygon";
@@ -70,9 +73,16 @@ async function getRedisClient(): Promise<RedisClientType> {
     return redisConnection;
 }
 
-export async function getStatus(): Promise<{ team: Team; status: "empty" }> {
-    return { team: "alerts", status: "empty" };
-}
+export const getStatus = async (): Promise<{
+    team: "alerts";
+    status: "empty";
+}> => ({
+    team: "alerts",
+    status: "empty",
+});
+
+export const getAlertStatus = async (): Promise<AlertStatus[]> =>
+    getAlertStatusFromRepository();
 
 export async function getAlertables() {
     const [cityZones, drones] = await Promise.all([
@@ -98,7 +108,6 @@ export async function getAlertables() {
     }
     return alertable;
 }
-
 export async function cacheDroneAlerts(): Promise<void> {
     const redis = await getRedisClient();
     const alertable = await getAlertables();
@@ -122,8 +131,6 @@ export async function getIntersecting(
     const polygons = cityZones.features as Feature<Polygon | MultiPolygon, GeoJsonProperties>[];
     return getIntersectingCityZones(polygons, location, azimuth);
 }
-
-export const getINter = getIntersecting;
 
 export function getIntersectingCityZones(
     polygons: Feature<Polygon | MultiPolygon, GeoJsonProperties>[],

@@ -14,4 +14,19 @@ import { asyncHandler } from "../shared/asyncHandler";
 export const logisticsRoutes: Router = Router();
 
 logisticsRoutes.get("/", asyncHandler(logistics.getStatus));
+logisticsRoutes.post("/fire-intercept", asyncHandler(logistics.fireIntercept));
 logisticsRoutes.get("/all", asyncHandler(logistics.getAll));
+logisticsRoutes.get(
+  "/launchers",
+  asyncHandler(logistics.getLiveDeployments),
+);
+logisticsRoutes.get(
+  "/launcher-types",
+  asyncHandler(logistics.getAllLauncherTypes),
+);
+logisticsRoutes.get(
+  "/interceptor-types",
+  asyncHandler(logistics.getAllInterceptorTypes),
+);
+logisticsRoutes.get("/launcher-data", logistics.getAllLaunchers);
+logisticsRoutes.get("/launchers/:id", logistics.getLauncherById);
