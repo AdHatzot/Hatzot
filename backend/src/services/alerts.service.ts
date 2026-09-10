@@ -10,8 +10,8 @@
  */
 import type { Location } from "../types";
 import {
-    getAlertStatus as getAlertStatusFromRepository,
-    type AlertStatus,
+  getAlertStatus as getAlertStatusFromRepository,
+  type AlertStatus,
 } from "../repositories/alerts.repository";
 import { readFile } from "fs/promises";
 import booleanIntersects from "@turf/boolean-intersects";
@@ -29,6 +29,8 @@ import type {
   MultiPolygon,
   Polygon,
 } from "geojson";
+import path from "path";
+import { lineIntersect, pointToPolygonDistance } from "@turf/turf";
 
 const DEFAULT_PREDICTION_WINDOW_SECONDS = 60;
 
@@ -41,7 +43,7 @@ export const getStatus = async (): Promise<{
 });
 
 export const getAlertStatus = async (): Promise<AlertStatus[]> =>
-    getAlertStatusFromRepository();
+  getAlertStatusFromRepository();
 
 export async function getCityZones(
   geojson: string,
@@ -55,7 +57,6 @@ export function getIntersectingCityZones(
   location: Location,
   azimuth: number,
   velocity: number,
-  predictionWindowSeconds = DEFAULT_PREDICTION_WINDOW_SECONDS,
 ): Feature<Polygon | MultiPolygon, GeoJsonProperties>[] {
   if (azimuth < 0 || azimuth > 360 || !Number.isFinite(azimuth)) {
     throw new RangeError("Azimuth must be a number between 0 and 360 degrees.");
@@ -65,23 +66,11 @@ export function getIntersectingCityZones(
     throw new RangeError("Velocity must be a non-negative number in m/s.");
   }
 
-  if (
-    predictionWindowSeconds < 0 ||
-    !Number.isFinite(predictionWindowSeconds)
-  ) {
-    throw new RangeError(
-      "Prediction window must be a non-negative number in seconds.",
-    );
-  }
-
   const path = lineString([
     [location.longitude, location.latitude],
-    destination(
-      [location.longitude, location.latitude],
-      (velocity * predictionWindowSeconds) / 1000,
-      azimuth,
-      { units: "kilometers" },
-    ).geometry.coordinates,
+    destination([location.longitude, location.latitude], 600000, azimuth, {
+      units: "meters",
+    }).geometry.coordinates,
   ]);
 
   return polygons.filter((polygon) => booleanIntersects(path, polygon));
@@ -100,32 +89,8 @@ export function getAlertableCityZones(
 
   return polygons.filter((polygon) => {
     const ttl = polygon.properties?.TTL;
-
-    if (typeof ttl !== "number" || ttl < 0 || !Number.isFinite(ttl)) {
-      throw new RangeError(
-        "Every polygon must have a non-negative TTL in seconds.",
-      );
-    }
-
-    if (booleanPointInPolygon(dronePoint, polygon)) {
-      return 0 <= ttl;
-    }
-
-    const boundary = polygonToLine(polygon);
-    const boundaryLines =
-      boundary.type === "FeatureCollection" ? boundary.features : [boundary];
-    const distanceToIntersection = Math.min(
-      ...boundaryLines.map((boundaryLine) =>
-        distance(dronePoint, nearestPointOnLine(boundaryLine, dronePoint), {
-          units: "meters",
-        }),
-      ),
+    return (
+      pointToPolygonDistance(dronePoint, polygon, { units: "meters" }) <= ttl
     );
-    const secondsUntilIntersection =
-      velocity === 0
-        ? Number.POSITIVE_INFINITY
-        : distanceToIntersection / velocity;
-
-    return secondsUntilIntersection <= ttl;
   });
 }
