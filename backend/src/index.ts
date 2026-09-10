@@ -20,6 +20,9 @@ import { alertsRoutes } from "./routes/alerts.routes";
 import { logisticsRoutes } from "./routes/logistics.routes";
 import { loopRoutes } from "./routes/loop.routes";
 import { startBlueReloadTicker } from "./services/blue.service";
+import { redis } from "./redis/redis.client";
+import { startAlertsListener } from "./redis/alerts.listener";
+
 import { errorHandler } from "./shared/errorHandler";
 
 const PORT = Number(process.env.PORT ?? 3000);
@@ -44,6 +47,11 @@ app.use(errorHandler);
 
 async function main(): Promise<void> {
   await initDatabase();
+    // Connect to Redis
+  await redis.connect();
+
+  // Start listening for alert changes
+  await startAlertsListener();
   const server = createServer(app);
   attachHub(server);
   startBlueReloadTicker();
