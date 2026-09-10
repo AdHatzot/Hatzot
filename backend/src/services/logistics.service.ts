@@ -18,7 +18,11 @@ import { LiveLauncher } from "../db/entities/liveLauncher.entity";
 import {
   logisticsDeploymentRepository,
   logisticsLiveLauncherRepository,
+  logisticsLauncherTypeRepository,
+  logisticsInterceptorTypeRepository
 } from "../repositories/logistics.repository";
+import { LauncherType } from "../db/entities/launcherType.entity";
+import { InterceptorType } from "../db/entities/InterceptorType.entity";
 
 export async function getStatus(): Promise<{ team: Team; status: string }> {
   return { team: "logistics", status: "empty" };
@@ -48,33 +52,43 @@ export async function getAll() {
   return await logisticsDeploymentRepository.find();
 }
 
-export async function getLiveDeployments(deploymentId: number) {
+export async function getLiveDeployments(
+  deploymentId?: number
+): Promise<
+  Array<{
+    deployment: unknown;
+    launcherId: string;
+    location: {
+      latitude: number | null;
+      longitude: number | null;
+      asl: number | null;
+      agl: number | null;
+    };
+    ammunitionAmount: number;
+  }>
+> {
+  const targetDeploymentId = deploymentId ?? 1;
+
   const results = await logisticsLiveLauncherRepository
     .createQueryBuilder("launcher")
-    // Join and load the full Deployment entity
     .innerJoinAndSelect("launcher.deployment", "deployment")
-    // Left join ammunition table to sum the quantity
     .leftJoin("launcher.launcherAmmunitions", "ammunition")
-    .where("deployment.id = :deploymentId", { deploymentId })
+    .where("deployment.id = :deploymentId", { deploymentId: targetDeploymentId })
     .select([
-      // Deployment entity fields
       "deployment.id",
       "deployment.name",
       "deployment.status",
-      // LiveLauncher location & identifier fields
       "launcher.id",
       "launcher.latitude",
       "launcher.longitude",
       "launcher.asl",
       "launcher.agl",
-      // Sum the total ammunition quantity for this launcher
       "COALESCE(SUM(ammunition.quantity), 0) AS total_ammunition_quantity",
     ])
     .groupBy("launcher.id")
     .addGroupBy("deployment.id")
     .getRawAndEntities();
 
-  // Custom mapping if you want clean structured objects:
   return results.entities.map((entity, index) => ({
     deployment: entity.deployment,
     launcherId: entity.id,
@@ -86,4 +100,12 @@ export async function getLiveDeployments(deploymentId: number) {
     },
     ammunitionAmount: Number(results.raw[index].total_ammunition_quantity),
   }));
+}
+
+export async function getAllLauncherTypes(): Promise<Array<LauncherType>> {
+  return await logisticsLauncherTypeRepository.find();
+}
+
+export async function getAllInterceptorTypes(): Promise<Array<InterceptorType>> {
+  return await logisticsInterceptorTypeRepository.find();
 }

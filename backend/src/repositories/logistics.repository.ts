@@ -21,6 +21,8 @@ import { LauncherData } from "../utils/LiveLauncherTypes";
 import { LauncherAmmunition } from "../db/entities/launcherAmmunition.entity";
 import { LiveLauncher } from "../db/entities/liveLauncher.entity";
 import { HttpError } from "../shared/httpError";
+import { LauncherType } from "../db/entities/launcherType.entity";
+import { InterceptorType } from "../db/entities/InterceptorType.entity";
 
 export interface FireInterceptRequest {
   launcherId: number;
@@ -35,6 +37,7 @@ export interface FireInterceptResult {
 
 export const logisticsDeploymentRepository =
   dataSource.getRepository(Deployment);
+
 export const logisticsLiveLauncherRepository =
   dataSource.getRepository(LiveLauncher);
 
@@ -92,6 +95,12 @@ const getLauncherById = async (id: string): Promise<LauncherData | null> => {
 };
 
 export { getAllLaunchers, getLauncherById };
+export const logisticsLauncherTypeRepository =
+  dataSource.getRepository(LauncherType);
+
+export const logisticsInterceptorTypeRepository =
+  dataSource.getRepository(InterceptorType);
+
 export async function fireIntercept(
   request: FireInterceptRequest,
 ): Promise<FireInterceptResult> {
