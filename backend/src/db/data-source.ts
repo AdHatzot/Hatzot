@@ -37,6 +37,10 @@ import { Interception } from "./entities/interception.entity";
 import { Drone } from "./entities/drone.entity";
 import { DroneType } from "./entities/droneType.entity";
 
+import { Drone } from "./entities/red/drone.entity";
+import { DroneType } from "./entities/red/drone-type.entity";
+import { DronePosition } from "./entities/red/drone-position.entity";
+
 //add to .env
 // PORT=3000
 // DB_HOST=localhost
@@ -58,6 +62,9 @@ export const dataSource = new DataSource({
     Interception,
     Drone,
     DroneType,
+    Drone,
+    DroneType,
+    DronePosition,
   ],
   synchronize: false,
   host: config.DB_HOST,
@@ -69,7 +76,6 @@ export const dataSource = new DataSource({
   logging: true,
   migrations: ["dist/db/migrations/*.js"],
   subscribers: [],
-  ssl: config.NODE_ENV === "production" || config.NODE_ENV === "development",
 });
 
 export function isDatabaseConfigured(): boolean {

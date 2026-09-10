@@ -2,7 +2,7 @@
  * @team     red
  * @owner    red-lead
  * @public   yes
- * @updated  2026-09-08
+ * @updated  2026-09-09
  *
  */
 import type { TeamMapLayer } from "@/shared/contracts";
