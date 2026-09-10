@@ -17,7 +17,7 @@ import { Drone } from "./drone.entity";
 @Entity("drone_position")
 export class DronePosition implements Identifiable {
   @PrimaryGeneratedColumn({ type: "bigint" })
-  id!: string;
+  id!: number;
 
   @Column({ type: "bigint" })
   droneId!: string;

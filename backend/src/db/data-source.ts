@@ -28,6 +28,11 @@
  */
 import { DataSource } from "typeorm";
 import config from "../config";
+import { Deployment } from "./entities/deployment.entity";
+import { InterceptorType } from "./entities/InterceptorType.entity";
+import { LauncherAmmunition } from "./entities/launcherAmmunition.entity";
+import { LauncherType } from "./entities/launcherType.entity";
+import { LiveLauncher } from "./entities/liveLauncher.entity";
 
 //add to .env
 // PORT=3000
@@ -41,7 +46,13 @@ import config from "../config";
 
 export const dataSource = new DataSource({
   type: "postgres",
-  entities: ["src/db/entities/*.ts"],
+  entities: [
+    Deployment,
+    LiveLauncher,
+    LauncherType,
+    LauncherAmmunition,
+    InterceptorType,
+  ],
   synchronize: false,
   host: config.DB_HOST,
   port: config.DB_PORT,
@@ -49,7 +60,7 @@ export const dataSource = new DataSource({
   password: config.DB_PASSWORD,
   database: config.DB_NAME,
   schema: config.DB_SCHEMA,
-  logging: false,
+  logging: true,
   migrations: ["dist/db/migrations/*.js"],
   subscribers: [],
 });

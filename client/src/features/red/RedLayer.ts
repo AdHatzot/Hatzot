@@ -25,7 +25,7 @@ export function mountRedLayer(group: LayerGroup, _map: LeafletMap): void {
 
 async function fetchAndUpdateDrones(group: LayerGroup): Promise<void> {
   try {
-    const response = await axios.get<Drone[]>(`${config.VITE_SERVER_URL}/api/red/`);
+    const response = await axios.get<Drone[]>(`${config.VITE_SERVER_URL}/api/red/drones`);
     const drones = response.data;
     const colour = cssVar("--team-red");
 

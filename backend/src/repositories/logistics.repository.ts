@@ -15,7 +15,76 @@
  */
 
 // import { createRepository, type Repository } from "../db";
-import { Deployment } from "../db/entities/logistics.entity";
+import { Deployment } from "../db/entities/deployment.entity";
 import { dataSource } from "../db/data-source";
+import { LauncherAmmunition } from "../db/entities/launcherAmmunition.entity";
+import { LiveLauncher } from "../db/entities/liveLauncher.entity";
+import { HttpError } from "../shared/httpError";
 
-export const logisticsDeploymentRepository = dataSource.getRepository(Deployment);
+export interface FireInterceptRequest {
+  launcherId: number;
+  interceptorTypeId: number;
+}
+
+export interface FireInterceptResult {
+  launcherId: string;
+  interceptorTypeId: number;
+  reloadTimeS: number;
+}
+
+export const logisticsDeploymentRepository =
+  dataSource.getRepository(Deployment);
+export const logisticsLiveLauncherRepository =
+  dataSource.getRepository(LiveLauncher);
+
+export async function fireIntercept(
+  request: FireInterceptRequest,
+): Promise<FireInterceptResult> {
+  return dataSource.transaction(async (manager) => {
+    const ammunition = await manager
+      .getRepository(LauncherAmmunition)
+      .createQueryBuilder("ammunition")
+      .innerJoinAndSelect("ammunition.launcher", "launcher")
+      .innerJoinAndSelect("launcher.launcherType", "launcherType")
+      .where("ammunition.launcher_id = :launcherId", {
+        launcherId: request.launcherId,
+      })
+      .andWhere("ammunition.interceptor_type_id = :interceptorTypeId", {
+        interceptorTypeId: request.interceptorTypeId,
+      })
+      .setLock("pessimistic_write")
+      .getOne();
+
+    if (ammunition === null) {
+      throw new HttpError(404, "No launcher with this interceptor was found");
+    }
+
+    const launcher = ammunition.launcher;
+    if (launcher === undefined) {
+      throw new HttpError(404, "Launcher was not found");
+    }
+
+    if (launcher.launcherType === undefined) {
+      throw new HttpError(404, "Launcher type was not found");
+    }
+
+    if (!launcher.active) {
+      throw new HttpError(409, "Launcher is reloading");
+    }
+
+    if ((ammunition.quantity ?? 0) < 1) {
+      throw new HttpError(409, "Interceptor has no ammunition");
+    }
+
+    ammunition.quantity -= 1;
+    launcher.active = false;
+    await manager.getRepository(LauncherAmmunition).save(ammunition);
+    await manager.getRepository(LiveLauncher).save(launcher);
+
+    return {
+      launcherId: launcher.id,
+      interceptorTypeId: ammunition.interceptorTypeId,
+      reloadTimeS: Number(launcher.launcherType.reloadTimeS ?? 0),
+    };
+  });
+}

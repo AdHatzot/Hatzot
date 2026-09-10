@@ -10,7 +10,7 @@ import { Entity, PrimaryGeneratedColumn, Column } from "typeorm";
 @Entity("drone_type")
 export class DroneType implements Identifiable {
   @PrimaryGeneratedColumn()
-  id!: string;
+  id!: number;
 
   @Column({ type: "text", unique: true })
   name!: string;
