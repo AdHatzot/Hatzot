@@ -1,4 +1,3 @@
-
 /**
  * @team     alerts
  * @owner    alerts-lead
@@ -11,7 +10,7 @@ import { CrosshairIcon } from "./CrosshairIcon";
 import { useState } from "react";
 import { Drone } from "@/types/drones";
 
-export const DEMO_DRONES: Drone[] = [
+const DEMO_DRONES: Drone[] = [
   {
     type: "quadcopter",
     id: "drone-alpha-01",
