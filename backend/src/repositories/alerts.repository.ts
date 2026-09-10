@@ -105,5 +105,13 @@ export const getAlertStatus = async (): Promise<AlertStatus[]> => {
 		}),
 	);
 
-	return statuses.flat();
+	const statusByCity = new Map<number, AlertStatus>();
+	for (const status of statuses.flat()) {
+		const current = statusByCity.get(status.cityId);
+		if (!current || status.type === "siren") {
+			statusByCity.set(status.cityId, status);
+		}
+	}
+
+	return [...statusByCity.values()];
 };

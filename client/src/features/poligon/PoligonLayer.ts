@@ -6,11 +6,12 @@ interface PolygonFeature {
     CITY_NAME?: string;
     ENG_NAME?: string;
     OBJECTID?: number;
+    CITY_ID?: number;
     [key: string]: unknown;
   };
   geometry: {
-    type: "Polygon";
-    coordinates: number[][][];
+    type: "Polygon" | "MultiPolygon";
+    coordinates: number[][][] | number[][][][];
   };
 }
 
@@ -31,8 +32,12 @@ const ALERT_COLOR = "#ff0000";
 const BLINK_INTERVAL_MS = 500;
 const POLL_INTERVAL_MS = 2000;
 
+const normalizeCityName = (name: string): string =>
+  name.trim().replace(/\s+/g, " ");
+
 interface TrackedPolygon {
   polygon: L.Polygon;
+  cityName: string;
   state: AlertState;
   blinkInterval?: ReturnType<typeof setInterval>;
   showingRed: boolean;
@@ -40,7 +45,11 @@ interface TrackedPolygon {
 
 const parseAlertEntry = (
   raw: unknown,
-): { objectId: number; state: "siren" | "threatened" } | null => {
+): {
+  objectId: number;
+  cityName?: string;
+  state: "siren" | "threatened";
+} | null => {
   if (typeof raw === "object" && raw !== null) {
     const entry = raw as Partial<AlertStatusEntry> & {
       cityId?: number | string;
@@ -53,7 +62,14 @@ const parseAlertEntry = (
       return null;
     }
 
-    return { objectId, state: entry.type };
+    return {
+      objectId,
+      cityName:
+        typeof (entry as { cityName?: unknown }).cityName === "string"
+          ? (entry as { cityName: string }).cityName
+          : undefined,
+      state: entry.type,
+    };
   }
 
   if (typeof raw !== "string") {
@@ -76,6 +92,7 @@ export async function mountPolygonLayer(
 ): Promise<() => void> {
   const apiUrl = import.meta.env.VITE_API_URL ?? "";
   const tracked = new Map<number, TrackedPolygon>();
+  const trackedByName = new Map<string, TrackedPolygon>();
   let pollTimer: ReturnType<typeof setInterval> | undefined;
   let stopped = false;
 
@@ -125,14 +142,21 @@ export async function mountPolygonLayer(
     const data: PolygonResponse = await response.json();
 
     data.features.forEach((feature) => {
-      if (feature.geometry.type !== "Polygon") return;
+      const cityId = feature.properties.CITY_ID;
+      if (cityId === undefined) return;
 
-      const objectId = feature.properties.OBJECTID;
-      if (objectId === undefined) return;
-
-      const latLngs: L.LatLngExpression[][] = feature.geometry.coordinates.map(
-        (ring) => ring.map(([longitude, latitude]) => [latitude, longitude]),
-      );
+      const latLngs = (
+        feature.geometry.type === "Polygon"
+          ? (feature.geometry.coordinates as number[][][]).map((ring) =>
+              ring.map(([longitude, latitude]) => [latitude, longitude]),
+            )
+          : (feature.geometry.coordinates as number[][][][]).flatMap(
+              (polygon) =>
+                polygon.map((ring) =>
+                  ring.map(([longitude, latitude]) => [latitude, longitude]),
+                ),
+            )
+      ) as L.LatLngExpression[][];
 
       const polygon = L.polygon(latLngs, {
         color: DEFAULT_COLOR,
@@ -149,11 +173,20 @@ export async function mountPolygonLayer(
         )
         .addTo(group);
 
-      tracked.set(Number(objectId), {
+      const trackedPolygon: TrackedPolygon = {
         polygon,
+        cityName: feature.properties.CITY_NAME ?? "",
         state: "normal",
         showingRed: false,
-      });
+      };
+
+      tracked.set(Number(cityId), trackedPolygon);
+      if (trackedPolygon.cityName) {
+        trackedByName.set(
+          normalizeCityName(trackedPolygon.cityName),
+          trackedPolygon,
+        );
+      }
     });
   } catch (error) {
     console.error("Failed to load polygon layer:", error);
@@ -172,7 +205,11 @@ export async function mountPolygonLayer(
         if (!parsed) return;
 
         activeIds.add(parsed.objectId);
-        const entry = tracked.get(parsed.objectId);
+        const entry =
+          tracked.get(parsed.objectId) ??
+          (parsed.cityName
+            ? trackedByName.get(normalizeCityName(parsed.cityName))
+            : undefined);
         if (entry) applyState(entry, parsed.state);
       });
 
@@ -196,5 +233,6 @@ export async function mountPolygonLayer(
     if (pollTimer) clearInterval(pollTimer);
     tracked.forEach((entry) => stopBlink(entry));
     tracked.clear();
+    trackedByName.clear();
   };
 }

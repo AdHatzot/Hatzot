@@ -9,8 +9,8 @@
  * via broadcast() from ../ws. No Express types in here.
  */
 import type { Location } from "../types";
-import { createClient, type RedisClientType } from "redis";
 import { getDrones } from "./drones.service";
+import { redis } from "../redis/redis.client";
 import {
     getAlertStatus as getAlertStatusFromRepository,
     type AlertStatus,
@@ -38,7 +38,8 @@ const CITIES_GEOJSON_PATH =
     path.join(process.cwd(), "src", "db", "assets", "cities", "CITIES.geojson");
 
 const INFINITE_LINE_DISTANCE_KILOMETERS = 20_040;
-const REDIS_ALERT_KEY_PREFIX = "siren";
+const REDIS_ALERT_KEY_PREFIX = "siren:";
+const REDIS_THREATENED_KEY_PREFIX = "threatened:";
 
 
 let citiesSingleton: FeatureCollection<Geometry, GeoJsonProperties> | null = null;
@@ -51,27 +52,13 @@ export async function getCityZones(): Promise<FeatureCollection<Geometry, GeoJso
     return citiesSingleton;
 }
 
-let redisClient: RedisClientType | null = null;
-let redisConnection: Promise<RedisClientType> | null = null;
-
-async function getRedisClient(): Promise<RedisClientType> {
-    if (redisClient?.isReady) return redisClient;
-
-    if (!redisConnection) {
-        const client = createClient({
-            url: process.env.REDIS_URL ?? "redis://localhost:6379",
-        });
-        client.on("error", (error: unknown) => {
-            console.error("Redis client error", error);
-        });
-        redisConnection = client.connect().then(() => {
-            redisClient = client;
-            return client;
-        });
+const getRedisClient = async () => {
+    if (!redis.isReady) {
+        throw new Error("Redis client is not connected");
     }
 
-    return redisConnection;
-}
+    return redis;
+};
 
 export const getStatus = async (): Promise<{
     team: "alerts";
@@ -84,42 +71,80 @@ export const getStatus = async (): Promise<{
 export const getAlertStatus = async (): Promise<AlertStatus[]> =>
     getAlertStatusFromRepository();
 
-export async function getAlertables() {
+export async function getAlertables(): Promise<
+    Feature<Polygon | MultiPolygon, GeoJsonProperties>[]
+> {
     const [cityZones, drones] = await Promise.all([
         getCityZones(),
         getDrones(),
     ]);
-    const polygons = cityZones.features as Feature<
-        Polygon,
-        GeoJsonProperties
-    >[];
-    let alertable: Feature<Polygon | MultiPolygon, GeoJsonProperties>[] = [];
-    for (const drone of drones) {
-        const intersecting = getIntersectingCityZones(
-            polygons,
-            drone.location,
-            drone.heading,
-        );
-        alertable.push(...getAlertableCityZones(
-            intersecting,
+
+    const polygons = cityZones.features.filter(
+        (
+            feature,
+        ): feature is Feature<Polygon | MultiPolygon, GeoJsonProperties> =>
+            feature.geometry.type === "Polygon" ||
+            feature.geometry.type === "MultiPolygon",
+    );
+
+    return drones.flatMap((drone) =>
+        getAlertableCityZones(
+            getIntersectingCityZones(polygons, drone.location, drone.heading),
             drone.location,
             drone.velocity,
-        ));
-    }
-    return alertable;
+        ),
+    );
 }
 export async function cacheDroneAlerts(): Promise<void> {
     const redis = await getRedisClient();
     const alertable = await getAlertables();
+    const now = Math.floor(Date.now() / 1000);
+    const alertsByCity = new Map<number, Feature<Polygon | MultiPolygon, GeoJsonProperties>>();
 
     for (const polygon of alertable) {
         const cityId = polygon.properties?.CITY_ID;
-        const ttl = polygon.properties?.TTL;
+        if (typeof cityId !== "number" || !Number.isInteger(cityId)) {
+            continue;
+        }
 
-        redis.set(`${REDIS_ALERT_KEY_PREFIX}:${cityId}`, cityId, {
-            EX: ttl,
-            NX: true,
-        });
+        alertsByCity.set(cityId, polygon);
+    }
+
+    for (const [cityId, polygon] of alertsByCity) {
+        const ttlSeconds = polygon.properties?.TTL;
+        const cityName = polygon.properties?.CITY_NAME;
+        if (
+            typeof ttlSeconds !== "number" ||
+            !Number.isInteger(ttlSeconds) ||
+            ttlSeconds <= 0 ||
+            typeof cityName !== "string" ||
+            cityName.length === 0
+        ) {
+            continue;
+        }
+
+        const key = `${REDIS_ALERT_KEY_PREFIX}${cityId}`;
+        const threatenedKey = `${REDIS_THREATENED_KEY_PREFIX}${cityId}`;
+        if ((await redis.exists(key)) === 1) {
+            await redis.del(threatenedKey);
+            continue;
+        }
+
+        if ((await redis.exists(threatenedKey)) === 1) {
+            continue;
+        }
+
+        const result = await redis.sendCommand([
+            "JSON.SET",
+            key,
+            "$",
+            JSON.stringify({ cityId, cityName, timestamp: now }),
+            "NX",
+        ]);
+
+        if (String(result) === "OK") {
+            await redis.expire(key, ttlSeconds);
+        }
     }
 }
 
@@ -158,11 +183,11 @@ export function getIntersectingCityZones(
     return polygons.filter((polygon) => booleanIntersects(path, polygon));
 }
 
-export function getAlertableCityZones(
+export const getAlertableCityZones = (
     polygons: Feature<Polygon | MultiPolygon, GeoJsonProperties>[],
     location: Location,
     velocity: number,
-): Feature<Polygon | MultiPolygon, GeoJsonProperties>[] {
+): Feature<Polygon | MultiPolygon, GeoJsonProperties>[] => {
     if (velocity < 0 || !Number.isFinite(velocity)) {
         throw new RangeError("Velocity must be a non-negative number in m/s.");
     }
@@ -179,32 +204,37 @@ export function getAlertableCityZones(
         }
 
         if (booleanPointInPolygon(dronePoint, polygon)) {
-            return 0 <= ttl;
+            return true;
+        }
+
+        if (velocity === 0) {
+            return false;
         }
 
         const boundary = polygonToLine(polygon);
         const boundaryLines =
             boundary.type === "FeatureCollection" ? boundary.features : [boundary];
-        const distanceToIntersection = Math.min(
+        const distanceToBoundaryMeters = Math.min(
             ...boundaryLines.map((boundaryLine) =>
                 distance(dronePoint, nearestPointOnLine(boundaryLine, dronePoint), {
                     units: "meters",
                 }),
             ),
         );
-        const secondsUntilIntersection =
-            velocity === 0
-                ? Number.POSITIVE_INFINITY
-                : distanceToIntersection / velocity;
+        const secondsUntilBoundary = distanceToBoundaryMeters / velocity;
 
-        return secondsUntilIntersection <= ttl;
+        return secondsUntilBoundary <= ttl;
     });
-}
+};
 
 const DRONE_ALERTS_INTERVAL_MS = 2_000;
 
 
 export const startDroneAlertsTicker = (): void => {
+    void cacheDroneAlerts().catch((err: unknown) =>
+        console.error("initial drone alerts cache", err),
+    );
+
     setInterval(() => {
         cacheDroneAlerts().catch((err: unknown) =>
             console.error("drone alerts ticker", err),
