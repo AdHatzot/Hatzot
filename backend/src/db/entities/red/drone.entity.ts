@@ -4,7 +4,6 @@
  * @public   yes
  * @updated  2026-09-09
  */
-import type { Identifiable } from "../../repository";
 import {
   Entity,
   PrimaryColumn,
@@ -17,7 +16,7 @@ import { DroneType } from "./drone-type.entity";
 import { DronePosition } from "./drone-position.entity";
 
 @Entity("drone")
-export class Drone implements Identifiable {
+export class Drone {
   @PrimaryColumn({ type: "bigint" })
   id!: number;
 
