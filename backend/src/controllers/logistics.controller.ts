@@ -241,7 +241,79 @@ export async function createDeployment(
     rows: parsedRows,
   });
 
-  res.status(201).json(result);
+  res.status(201).json({
+    id: result.deploymentId,
+    ...result,
+  });
+}
+
+export async function updateDeployment(
+  req: Request<{ id: string }>,
+  res: Response,
+): Promise<void> {
+  const deploymentId = Number(req.params.id);
+  if (!Number.isInteger(deploymentId) || deploymentId < 1) {
+    throw new HttpError(400, "deployment id must be a positive integer");
+  }
+
+  const body = req.body as {
+    name?: unknown;
+    rows?: unknown;
+  };
+
+  const updatePayload: {
+    name?: string;
+    rows?: Array<{
+      id?: string;
+      launcher_type_name?: string;
+      longitude?: number;
+      latitude?: number;
+      asl?: number;
+      agl?: number;
+      amount?: number;
+      active?: boolean;
+    }>;
+  } = {};
+
+  if (typeof body?.name === "string") {
+    if (body.name.trim().length === 0) {
+      throw new HttpError(400, "name cannot be empty");
+    }
+    updatePayload.name = body.name.trim();
+  }
+
+  if (Array.isArray(body?.rows)) {
+    updatePayload.rows = body.rows.map((row: Record<string, unknown>) => {
+      const launcherRow: {
+        id?: string;
+        launcher_type_name?: string;
+        longitude?: number;
+        latitude?: number;
+        asl?: number;
+        agl?: number;
+        amount?: number;
+        active?: boolean;
+      } = {};
+
+      if (row.id !== undefined) launcherRow.id = String(row.id);
+      if (typeof row.launcher_type_name === "string") launcherRow.launcher_type_name = row.launcher_type_name.trim();
+      if (row.longitude !== undefined) launcherRow.longitude = Number(row.longitude);
+      if (row.latitude !== undefined) launcherRow.latitude = Number(row.latitude);
+      if (row.asl !== undefined) launcherRow.asl = Number(row.asl);
+      if (row.agl !== undefined) launcherRow.agl = Number(row.agl);
+      if (row.amount !== undefined) launcherRow.amount = Number(row.amount);
+      if (row.active !== undefined) launcherRow.active = Boolean(row.active);
+
+      return launcherRow;
+    });
+  }
+
+  const result = await logisticsService.updateDeployment(
+    deploymentId,
+    updatePayload,
+  );
+
+  res.status(200).json(result);
 }
 
 export const deployment = createDeployment;

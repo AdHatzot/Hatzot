@@ -161,19 +161,28 @@ export function GenericLauncherIcon({ className = "", size = 28 }: LauncherIconP
 
 export function getLauncherTypeIcon(name: string, size = 28): JSX.Element {
   const normalized = name.trim().toLowerCase();
+  let iconPath = "/icons/blue-marker.svg";
+
   if (normalized.includes("shieldnest")) {
-    return <ShieldNestIcon size={size} />;
+    iconPath = "/icons/blue-marker.svg";
+  } else if (normalized.includes("ironhook")) {
+    iconPath = "/icons/IronHook-SR.svg";
+  } else if (normalized.includes("horizoneye")) {
+    iconPath = "/icons/HorizonEye-MX.svg";
+  } else if (normalized.includes("cloudfence")) {
+    iconPath = "/icons/CloudFence-Area.svg";
   }
-  if (normalized.includes("ironhook")) {
-    return <IronHookIcon size={size} />;
-  }
-  if (normalized.includes("horizoneye")) {
-    return <HorizonEyeIcon size={size} />;
-  }
-  if (normalized.includes("cloudfence")) {
-    return <CloudFenceIcon size={size} />;
-  }
-  return <GenericLauncherIcon size={size} />;
+
+  return (
+    <img
+      src={iconPath}
+      alt={name}
+      width={size}
+      height={size}
+      style={{ width: size, height: size }}
+      className="shrink-0 object-contain"
+    />
+  );
 }
 
 export function getLauncherTypeColor(name: string): {
