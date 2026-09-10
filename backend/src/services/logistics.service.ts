@@ -11,7 +11,9 @@
 import type { Team } from "../types";
 import {
   fireIntercept as fireInterceptInRepository,
+  createDeployment as createDeploymentInRepository,
   type FireInterceptRequest,
+  type CreateDeploymentRequest,
 } from "../repositories/logistics.repository";
 import { dataSource } from "../db/data-source";
 import { LiveLauncher } from "../db/entities/liveLauncher.entity";
@@ -19,7 +21,7 @@ import {
   logisticsDeploymentRepository,
   logisticsLiveLauncherRepository,
   logisticsLauncherTypeRepository,
-  logisticsInterceptorTypeRepository
+  logisticsInterceptorTypeRepository,
 } from "../repositories/logistics.repository";
 import { LauncherType } from "../db/entities/launcherType.entity";
 import { InterceptorType } from "../db/entities/interceptorType.entity";
@@ -114,6 +116,10 @@ export async function getAllInterceptorTypes(): Promise<Array<InterceptorType>> 
   return await logisticsInterceptorTypeRepository.find();
 }
 
+export async function createDeployment(request: CreateDeploymentRequest) {
+  return await createDeploymentInRepository(request);
+}
+
 const mapLauncher = (launcher: LiveLauncher): LauncherData => {
   return {
     id: launcher.id,
@@ -139,7 +145,7 @@ export const getAllLaunchers = async (): Promise<LauncherData[]> => {
 export const getLauncherById = async (id: string): Promise<LauncherData | null> => {
   const launcher = await logisticsRepository.getLauncherFromDb(id);
 
-  if(!launcher) {
+  if (!launcher) {
     return null;
   }
 

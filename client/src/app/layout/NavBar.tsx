@@ -22,7 +22,7 @@ export function NavBar(): JSX.Element {
           חמ״ל
         </NavLink>
         <NavLink to="/logistics" className={linkClass}>
-          ניהול אמל״ח
+        יצירת פריסה
         </NavLink>
         <NavLink to="/logs" className={linkClass}>
           סגירת מעגל
