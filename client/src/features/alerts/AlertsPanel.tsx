@@ -31,9 +31,7 @@ export function AlertsPanel(): JSX.Element {
   useEffect(
     () =>
       subscribeRedDrones((ticks) => {
-        setDrones(
-          ticks.map(toDrone).sort((a, b) => a.id.localeCompare(b.id)),
-        );
+        setDrones(ticks.map(toDrone).sort((a, b) => a.id.localeCompare(b.id)));
       }),
     [],
   );
@@ -64,7 +62,7 @@ export function AlertsPanel(): JSX.Element {
             </span>
             <button
               className="flex items-center gap-1.5 text-sm font-medium text-red-400"
-              onClick={() => alert("shoot all :)")}
+              onClick={() => alert("חבל שאין קוד כאן :(")}
             >
               <CrosshairIcon className="h-4 w-4" />
               יירט הכל
