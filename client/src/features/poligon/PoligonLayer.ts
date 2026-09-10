@@ -33,8 +33,6 @@ export async function mountPolygonLayer(
 ): Promise<() => void> {
   const alertedStub = [2, 4, 5, 12, 41, 1511, 1442, 142, 65, 654];
 
-  // Track every timer/interval created so callers can clean them up
-  // (e.g. on component unmount) and avoid leaks/duplicate blinking.
   const timers: Timer[] = [];
 
   try {
@@ -52,8 +50,6 @@ export async function mountPolygonLayer(
         return;
       }
 
-      // GeoJSON: [longitude, latitude]
-      // Leaflet: [latitude, longitude]
       const latLngs: L.LatLngExpression[][] = feature.geometry.coordinates.map(
         (ring) => ring.map(([longitude, latitude]) => [latitude, longitude]),
       );
