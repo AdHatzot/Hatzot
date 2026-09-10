@@ -42,17 +42,19 @@ const parseAlertEntry = (
   raw: unknown,
 ): { objectId: number; state: "siren" | "threatened" } | null => {
   if (typeof raw === "object" && raw !== null) {
-    const entry = raw as Partial<AlertStatusEntry>;
+    const entry = raw as Partial<AlertStatusEntry> & {
+      cityId?: number | string;
+    };
+    const objectId = Number(entry.cityId);
     if (
       (entry.type !== "siren" && entry.type !== "threatened") ||
-      typeof entry.cityId !== "number" ||
-      !Number.isInteger(entry.cityId)
+      !Number.isInteger(objectId)
     ) {
       console.warn("Unrecognized alert entry:", raw);
       return null;
     }
 
-    return { objectId: entry.cityId, state: entry.type };
+    return { objectId, state: entry.type };
   }
 
   if (typeof raw !== "string") {

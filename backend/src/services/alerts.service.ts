@@ -8,7 +8,6 @@
  * goes through repositories/alerts.repository.ts only; live changes go out
  * via broadcast() from ../ws. No Express types in here.
  */
-import type { Team } from "../types";
 import type { Location } from "../types";
 import {
     getAlertStatus as getAlertStatusFromRepository,
@@ -30,28 +29,16 @@ import type {
   MultiPolygon,
   Polygon,
 } from "geojson";
-import cities from "../db/assets/cities/CITIES.geojson";
 
 const DEFAULT_PREDICTION_WINDOW_SECONDS = 60;
 
-
-export const getAlertsService = async () => {
-  const alerts = await getAlerts();
-
-  return alerts.map((alert) => {
-    const cityId = Number(alert.split(":")[1]);
-
-    const city = cities.features.find(
-      (feature) => feature.properties.CITY_ID === cityId,
-    );
-
-    return {
-      id: cityId,
-      name: city?.properties.CITY_NAME,
-      time: city?.properties.HEB_TIME,
-    };
-  });
-};
+export const getStatus = async (): Promise<{
+  team: "alerts";
+  status: "empty";
+}> => ({
+  team: "alerts",
+  status: "empty",
+});
 
 export const getAlertStatus = async (): Promise<AlertStatus[]> =>
     getAlertStatusFromRepository();

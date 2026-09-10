@@ -1,270 +1,184 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   ExclamationTriangleFill,
-  Building,
-  Search,
-  X,
-  ChevronDown,
-  GeoAlt,
   MegaphoneFill,
 } from "react-bootstrap-icons";
 
-// const MOCK_CITIES = [
-//   { id: "1", name: "באר שבע-מערב", minutesAgo: 2 },
-//   { id: "2", name: "אור נהר", minutesAgo: 4 },
-//   { id: "3", name: "גבעת זאב", minutesAgo: 6 },
-//   { id: "4", name: "נווה ירק", minutesAgo: 8 },
-//   { id: "5", name: "קדומים", minutesAgo: 10 },
-//   { id: "6", name: "המעפיל", minutesAgo: 13 },
-//   { id: "7", name: "חיננית", minutesAgo: 16 },
-//   { id: "9", name: "באר שבע-מזרח", minutesAgo: 22 },
-//   { id: "10", name: "באר שבע-צפון", minutesAgo: 25 },
-// ];
+type AlertType = "siren" | "threatened";
+
+type AlertStatus = {
+  type: AlertType;
+  cityId: number;
+  cityName?: string;
+};
+
+const POLL_INTERVAL_MS = 2000;
+
+const isAlertStatus = (value: unknown): value is AlertStatus => {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+
+  const entry = value as Record<string, unknown>;
+  const cityId =
+    typeof entry.cityId === "number"
+      ? entry.cityId
+      : typeof entry.cityId === "string"
+        ? Number(entry.cityId)
+        : Number.NaN;
+
+  return (
+    (entry.type === "siren" || entry.type === "threatened") &&
+    Number.isInteger(cityId)
+  );
+};
+
+const normalizeAlertStatus = (value: unknown): AlertStatus | null => {
+  if (!isAlertStatus(value)) {
+    return null;
+  }
+
+  const entry = value as Record<string, unknown>;
+  const cityId = Number(entry.cityId);
+
+  return {
+    type: entry.type as AlertType,
+    cityId,
+    ...(typeof entry.cityName === "string"
+      ? { cityName: entry.cityName }
+      : {}),
+  };
+};
 
 export function CitiesList(): JSX.Element {
-  const [isOpen, setIsOpen] = useState(false);
+  const [alerts, setAlerts] = useState<AlertStatus[]>([]);
   const [query, setQuery] = useState("");
-  const [alerts, setAlerts] = useState<string[]>([
-    "siren:1",
-    "siren:2",
-    "threatened:3",
-    "threatened:4",
-  ]);
+  const [error, setError] = useState<string | null>(null);
+  const apiUrl = import.meta.env.VITE_API_URL ?? "";
 
   useEffect(() => {
-    const ws = new WebSocket("ws://localhost:3000");
+    let stopped = false;
 
-    ws.onmessage = (event) => {
-      const data: string[] = JSON.parse(event.data);
+    const getAlertStatus = async (): Promise<void> => {
+      try {
+        const response = await fetch(`${apiUrl}/api/alerts/status`);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch alert status: ${response.status}`);
+        }
 
-      setAlerts(data);
+        const data: unknown = await response.json();
+        if (!Array.isArray(data)) {
+          throw new Error("Invalid alert status response");
+        }
+
+        if (!stopped) {
+          setAlerts(
+            data.flatMap((entry) => {
+              const normalized = normalizeAlertStatus(entry);
+              return normalized ? [normalized] : [];
+            }),
+          );
+          setError(null);
+        }
+      } catch (requestError) {
+        if (!stopped) {
+          setError(
+            requestError instanceof Error
+              ? requestError.message
+              : "Failed to fetch alert status",
+          );
+        }
+      }
     };
+
+    void getAlertStatus();
+    const timer = window.setInterval(
+      () => void getAlertStatus(),
+      POLL_INTERVAL_MS,
+    );
 
     return () => {
-      ws.close();
+      stopped = true;
+      window.clearInterval(timer);
     };
-  }, []);
+  }, [apiUrl]);
 
-  useEffect(() => {
-    setIsOpen(alerts.length > 0);
-  }, [alerts]);
+  const filteredAlerts = useMemo(() => {
+    const normalizedQuery = query.trim();
+    if (!normalizedQuery) {
+      return alerts;
+    }
 
-  const filtered = useMemo(() => {
-    return alerts.filter((alert) => {
-      const cityId = alert.split(":")[1];
-
-      const city = CITI.find((city) => city.id === cityId);
-
-      return city?.name.includes(query.trim());
-    });
+    return alerts.filter((alert) =>
+      (alert.cityName ?? String(alert.cityId)).includes(normalizedQuery),
+    );
   }, [alerts, query]);
 
   return (
-    <div
+    <section
       dir="rtl"
-      style={{
-        width: "100%",
-        fontFamily: "inherit",
-        fontSize: 14,
-        color: "#f2f2f2",
-        background: "#1c1c1e",
-        border: "1px solid #33333a",
-        borderRadius: 12,
-        overflow: "hidden",
-        boxShadow: "0 4px 16px rgba(0,0,0,0.35)",
-      }}
+      className="overflow-hidden rounded border border-line bg-panel-2"
     >
-      <button
-        type="button"
-        onClick={() => setIsOpen((prev) => !prev)}
-        aria-expanded={isOpen}
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          width: "100%",
-          background: "rgba(139, 0, 0, 0.35)",
-          border: "none",
-          padding: "10px 12px",
-          color: "#f2f2f2",
-          cursor: "pointer",
-        }}
-      >
-        <span
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-          }}
-        >
-          <span
-            style={{
-              background: "#e03131",
-              color: "#fff",
-              borderRadius: 999,
-              fontSize: 12,
-              fontWeight: 600,
-              padding: "2px 8px",
-            }}
-          >
-            {alerts.length}
-          </span>
-          <span style={{ fontWeight: 500 }}>יישובים בהתראה</span>
-        </span>
-
-        <span
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-          }}
-        >
-          <ExclamationTriangleFill size={16} color="#e03131" />
-
-          <ChevronDown
+      <div className="flex items-center justify-between border-b border-line px-3 py-2">
+        <h2 className="flex items-center gap-1 text-sm font-semibold text-text">
+          <ExclamationTriangleFill
+            aria-hidden="true"
+            className="text-team-red"
             size={16}
-            style={{
-              transform: isOpen ? "rotate(180deg)" : "rotate(0deg)",
-            }}
           />
+          יישובים בהתראה
+        </h2>
+        <span className="rounded-full bg-team-red px-2 py-0.5 text-xs text-white">
+          {alerts.length}
         </span>
-      </button>
+      </div>
 
-      {isOpen && (
-        <div>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              padding: "8px 12px",
-              borderTop: "1px solid #33333a",
-              borderBottom: "1px solid #33333a",
-            }}
-          >
-            <Search size={16} color="#9a9a9f" />
-
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="חיפוש יישוב..."
-              style={{
-                flex: 1,
-                minWidth: 0,
-                background: "transparent",
-                border: "none",
-                outline: "none",
-                color: "#f2f2f2",
-                fontSize: 14,
-              }}
-            />
-
-            <button
-              type="button"
-              onClick={() => setQuery("")}
-              style={{
-                display: "flex",
-                background: "transparent",
-                border: "none",
-                color: "#9a9a9f",
-                cursor: "pointer",
-                padding: 2,
-              }}
-            >
-              <X size={16} />
-            </button>
-          </div>
-
-          <ul
-            style={{
-              listStyle: "none",
-              margin: 0,
-              padding: 0,
-              maxHeight: "100%",
-              overflowY: "auto",
-            }}
-          >
-            {filtered.map((alert, index) => {
-              const cityId = alert.split(":")[1];
-              const city = MOCK_CITIES.find((city) => city.id === cityId);
-              if (!city) return null;
-
-              return (
-                <li
-                  key={city.id}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    padding: "10px 12px",
-                    borderBottom:
-                      index < filtered.length - 1
-                        ? "1px solid #33333a"
-                        : "none",
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 8,
-                      flex: 1,
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: "center",
-                        gap: 2,
-                        color: "#9a9a9f",
-                      }}
-                    >
-                      <GeoAlt size={16} />
-
-                      <span
-                        style={{
-                          fontSize: 11,
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        לפני {city.minutesAgo} דק׳
-                      </span>
-                    </div>
-
-                    <span>{city.name}</span>
-                  </div>
-
-                  <div
-                    style={{
-                      width: 40,
-                      display: "flex",
-                      justifyContent: "center",
-                      flexShrink: 0,
-                    }}
-                  >
-                    <Building size={16} color="#9a9a9f" />
-                  </div>
-
-                  <div
-                    style={{
-                      width: 40,
-                      display: "flex",
-                      justifyContent: "flex-start",
-                      flexShrink: 0,
-                    }}
-                  >
-                    {alert.startsWith("siren:") ? (
-                      <MegaphoneFill size={16} color="#e03131" />
-                    ) : (
-                      <ExclamationTriangleFill size={16} color="#f5c542" />
-                    )}
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
+      {alerts.length > 0 && (
+        <input
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder="חיפוש יישוב..."
+          aria-label="חיפוש יישוב"
+          className="w-full border-b border-line bg-transparent px-3 py-2 text-sm text-text outline-none placeholder:text-text-dim"
+        />
       )}
-    </div>
+
+      {error && (
+        <p className="px-3 py-2 text-xs text-team-red">לא ניתן לטעון התראות</p>
+      )}
+
+      {!error && alerts.length === 0 && (
+        <p className="px-3 py-3 text-sm text-text-dim">אין התראות פעילות</p>
+      )}
+
+      {filteredAlerts.length > 0 && (
+        <ul className="divide-y divide-line">
+          {filteredAlerts.map((alert) => (
+            <li
+              key={`${alert.type}-${alert.cityId}`}
+              className="flex items-center justify-between px-3 py-2 text-sm"
+            >
+              <span className="text-text">
+                {alert.cityName ?? `יישוב ${alert.cityId}`}
+              </span>
+              <span
+                className={
+                  alert.type === "siren"
+                    ? "text-team-red"
+                    : "text-team-alerts"
+                }
+                title={alert.type === "siren" ? "סירנה" : "סכנה"}
+              >
+                {alert.type === "siren" ? (
+                  <MegaphoneFill aria-hidden="true" size={16} />
+                ) : (
+                  <ExclamationTriangleFill aria-hidden="true" size={16} />
+                )}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   );
 }
