@@ -1,5 +1,5 @@
 import { Drone } from "@/types/drones";
-import { CrosshairIcon } from "./CrosshairIcon";
+import { CrosshairIcon } from "../../../public/icons/CrosshairIcon";
 
 // const THREAT_LABELS: Record<ThreatLevel, string> = {
 //   high: "High",
