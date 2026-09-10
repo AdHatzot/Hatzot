@@ -10,6 +10,10 @@
  */
 import type { Team } from "../types";
 import type { Location } from "../types";
+import {
+    getAlertStatus as getAlertStatusFromRepository,
+    type AlertStatus,
+} from "../repositories/alerts.repository";
 import { readFile } from "fs/promises";
 import booleanIntersects from "@turf/boolean-intersects";
 import booleanPointInPolygon from "@turf/boolean-point-in-polygon";
@@ -32,6 +36,9 @@ const DEFAULT_PREDICTION_WINDOW_SECONDS = 60;
 export async function getStatus(): Promise<{ team: Team; status: "empty" }> {
     return { team: "alerts", status: "empty" };
 }
+
+export const getAlertStatus = async (): Promise<AlertStatus[]> =>
+    getAlertStatusFromRepository();
 
 export async function getCityZones(
     geojson: string,

@@ -21,6 +21,11 @@ interface PolygonResponse {
 
 type AlertState = "siren" | "threatened" | "normal";
 
+interface AlertStatusEntry {
+  type: "siren" | "threatened";
+  cityId: number;
+}
+
 const DEFAULT_COLOR = "#a8a8a8";
 const ALERT_COLOR = "#ff0000";
 const BLINK_INTERVAL_MS = 500;
@@ -33,9 +38,28 @@ interface TrackedPolygon {
   showingRed: boolean;
 }
 
-function parseAlertEntry(
-  raw: string,
-): { objectId: number; state: "siren" | "threatened" } | null {
+const parseAlertEntry = (
+  raw: unknown,
+): { objectId: number; state: "siren" | "threatened" } | null => {
+  if (typeof raw === "object" && raw !== null) {
+    const entry = raw as Partial<AlertStatusEntry>;
+    if (
+      (entry.type !== "siren" && entry.type !== "threatened") ||
+      typeof entry.cityId !== "number" ||
+      !Number.isInteger(entry.cityId)
+    ) {
+      console.warn("Unrecognized alert entry:", raw);
+      return null;
+    }
+
+    return { objectId: entry.cityId, state: entry.type };
+  }
+
+  if (typeof raw !== "string") {
+    console.warn("Unrecognized alert entry:", raw);
+    return null;
+  }
+
   const [state, idStr] = raw.split(":");
   const objectId = Number(idStr);
 
@@ -45,7 +69,7 @@ function parseAlertEntry(
   }
 
   return { objectId, state };
-}
+};
 
 export async function mountPolygonLayer(
   group: LayerGroup,
@@ -142,7 +166,7 @@ export async function mountPolygonLayer(
     try {
       const res = await fetch(`${apiUrl}/api/alerts/status`);
       if (!res.ok) throw new Error(`Failed to fetch status: ${res.status}`);
-      const raw: string[] = await res.json();
+      const raw: unknown[] = await res.json();
 
       const activeIds = new Set<number>();
 
