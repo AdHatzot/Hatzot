@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 512 512"
+     fill="#e7343b">
+
+  <!-- Top-left rotor -->
+  <circle cx="100" cy="110" r="82"
+          fill="none" stroke="#e7343b" stroke-width="14"/>
+
+  <!-- Top-right rotor -->
+  <circle cx="400" cy="110" r="82"
+          fill="none" stroke="#e7343b" stroke-width="14"/>
+
+  <!-- Bottom-left rotor -->
+  <circle cx="100" cy="402" r="82"
+          fill="none" stroke="#e7343b" stroke-width="14"/>
+
+  <!-- Bottom-right rotor -->
+  <circle cx="400" cy="402" r="82"
+          fill="none" stroke="#e7343b" stroke-width="14"/>
+
+  <!-- Drone body -->
+  <path d="
+    M256 174
+    L316 174
+    L382 110
+    L405 130
+    L345 198
+    L345 315
+    L405 382
+    L382 402
+    L316 338
+    L196 338
+    L130 402
+    L107 382
+    L167 315
+    L167 198
+    L107 130
+    L130 110
+    L196 174
+    Z"
+    fill="#e7343b"/>
+
+  <!-- Center body -->
+  <rect x="160" y="174" width="192" height="164"
+        rx="45" fill="#e7343b"/>
+</svg>

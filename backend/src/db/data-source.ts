@@ -43,15 +43,16 @@ import { Drone } from "./entities/red/drone.entity";
 import { DroneType } from "./entities/red/drone-type.entity";
 import { DronePosition } from "./entities/red/drone-position.entity";
 
-//add to .env
+// Add to .env if needed:
 // PORT=3000
 // DB_HOST=localhost
-// DB_PORT=5433
+// DB_PORT=5432
 // DB_NAME=postgres
 // DB_USERNAME=postgres
 // DB_PASSWORD=postgres
 // DB_SCHEMA=hatzot
-// NODE_ENV=dev
+// NODE_ENV=development
+// DB_SSL=false
 
 export const dataSource = new DataSource({
   type: "postgres",
@@ -76,6 +77,7 @@ export const dataSource = new DataSource({
   logging: true,
   migrations: ["dist/db/migrations/*.js"],
   subscribers: [],
+  ssl: config.DB_SSL ? { rejectUnauthorized: false } : false,
 });
 
 export function isDatabaseConfigured(): boolean {

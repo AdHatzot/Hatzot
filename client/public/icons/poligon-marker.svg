@@ -1,0 +1,37 @@
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 24 24"
+  fill="none"
+>
+  <!-- Main building -->
+  <path
+    d="M4 20V9L11 6V20H4Z"
+    fill="#a8a8a8"
+  />
+
+  <!-- Tall building -->
+  <path
+    d="M11 20V3L18 6V20H11Z"
+    fill="#a8a8a8"
+  />
+
+  <!-- Right building -->
+  <path
+    d="M18 20V11L21 12V20H18Z"
+    fill="#a8a8a8"
+  />
+
+  <!-- Windows -->
+  <path
+    d="M6 11H8V13H6V11ZM6 15H8V17H6V15ZM13 7H15V9H13V7ZM13 11H15V13H13V11ZM13 15H15V17H13V15ZM19 14H20V16H19V14Z"
+    fill="white"
+  />
+
+  <!-- Ground -->
+  <path
+    d="M3 20H21"
+    stroke="#a8a8a8"
+    stroke-width="2"
+    stroke-linecap="round"
+  />
+</svg>

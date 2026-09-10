@@ -9,20 +9,23 @@ import "reflect-metadata";
  * Bootstrap: express app + http server + ws hub. One app.use per team; the
  * per-team work lives in routes/ → controllers/ → services/ → repositories/.
  */
-import { createServer } from "node:http";
-import express from "express";
 import cors from "cors";
-import { attachHub } from "./ws";
+import express from "express";
+import { createServer } from "node:http";
 import { initDatabase } from "./db";
-import { redRoutes } from "./routes/red.routes";
-import { blueRoutes } from "./routes/blue.routes";
+import { startAlertsListener } from "./redis/alerts.listener";
+import { redis } from "./redis/redis.client";
 import { alertsRoutes } from "./routes/alerts.routes";
+import { blueRoutes } from "./routes/blue.routes";
 import { logisticsRoutes } from "./routes/logistics.routes";
 import { loopRoutes } from "./routes/loop.routes";
+import { redRoutes } from "./routes/red.routes";
+import { startDroneAlertsTicker } from "./services/alerts.service";
 import { startBlueReloadTicker } from "./services/blue.service";
+import { attachHub } from "./ws";
+
 import { interceptionsRoutes } from "./routes/interceptions.routes";
 import { errorHandler } from "./shared/errorHandler";
-import { startRedFetchDronesJob } from "./services/red.service";
 
 const PORT = Number(process.env.PORT ?? 3000);
 const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN ?? "http://localhost:5173";
@@ -47,10 +50,15 @@ app.use(errorHandler);
 
 async function main(): Promise<void> {
   await initDatabase();
+  // Connect to Redis
+  await redis.connect();
+
+  // Start listening for alert changes
+  await startAlertsListener();
   const server = createServer(app);
   attachHub(server);
   startBlueReloadTicker();
-  startRedFetchDronesJob();
+  startDroneAlertsTicker();
   server.listen(PORT, () => {
     console.log(
       `c2-backend  http://localhost:${PORT}  ws://localhost:${PORT}/ws`,
