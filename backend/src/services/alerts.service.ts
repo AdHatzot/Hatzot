@@ -27,7 +27,7 @@ import type {
     Polygon,
 } from "geojson";
 
-const DEFAULT_PREDICTION_WINDOW_SECONDS = 60;
+const INFINITE_LINE_DISTANCE_KILOMETERS = 20_040;
 
 export async function getStatus(): Promise<{ team: Team; status: "empty" }> {
     return { team: "alerts", status: "empty" };
@@ -44,8 +44,6 @@ export function getIntersectingCityZones(
     polygons: Feature<Polygon | MultiPolygon, GeoJsonProperties>[],
     location: Location,
     azimuth: number,
-    velocity: number,
-    predictionWindowSeconds = DEFAULT_PREDICTION_WINDOW_SECONDS,
 ): Feature<Polygon | MultiPolygon, GeoJsonProperties>[] {
     if (azimuth < 0 || azimuth > 360 || !Number.isFinite(azimuth)) {
         throw new RangeError(
@@ -53,24 +51,16 @@ export function getIntersectingCityZones(
         );
     }
 
-    if (velocity < 0 || !Number.isFinite(velocity)) {
-        throw new RangeError("Velocity must be a non-negative number in m/s.");
-    }
-
-    if (
-        predictionWindowSeconds < 0 ||
-        !Number.isFinite(predictionWindowSeconds)
-    ) {
-        throw new RangeError(
-            "Prediction window must be a non-negative number in seconds.",
-        );
-    }
-
     const path = lineString([
-        [location.longitude, location.latitude],
         destination(
             [location.longitude, location.latitude],
-            (velocity * predictionWindowSeconds) / 1000,
+            INFINITE_LINE_DISTANCE_KILOMETERS,
+            (azimuth + 180) % 360,
+            { units: "kilometers" },
+        ).geometry.coordinates,
+        destination(
+            [location.longitude, location.latitude],
+            INFINITE_LINE_DISTANCE_KILOMETERS,
             azimuth,
             { units: "kilometers" },
         ).geometry.coordinates,

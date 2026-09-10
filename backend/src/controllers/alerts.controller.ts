@@ -24,8 +24,6 @@ type IntersectingZonesBody = {
     polygons: CityPolygon[];
     location: Location;
     azimuth: number;
-    velocity: number;
-    predictionWindowSeconds?: number;
 };
 
 type AlertableZonesBody = {
@@ -54,16 +52,9 @@ export async function getIntersectingCityZones(
     req: Request<Record<string, never>, unknown, IntersectingZonesBody>,
     res: Response,
 ): Promise<void> {
-    const { polygons, location, azimuth, velocity, predictionWindowSeconds } =
-        req.body;
+    const { polygons, location, azimuth } = req.body;
     res.json(
-        alertsService.getIntersectingCityZones(
-            polygons,
-            location,
-            azimuth,
-            velocity,
-            predictionWindowSeconds,
-        ),
+        alertsService.getIntersectingCityZones(polygons, location, azimuth),
     );
 }
 
