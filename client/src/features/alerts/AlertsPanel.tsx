@@ -6,7 +6,7 @@
  *
  */
 import { DroneRow } from "./DroneRow";
-import { CrosshairIcon } from "./CrosshairIcon";
+import { CrosshairIcon } from "../../../public/icons/CrosshairIcon";
 import { useState } from "react";
 import { Drone } from "@/types/drones";
 
