@@ -5,6 +5,8 @@
  * @updated  2026-09-08
  *
  */
+import { CitiesList } from "@/features/alerts/CitiesList";
+
 export function SidebarEnd(): JSX.Element {
   return (
     <aside
@@ -14,6 +16,8 @@ export function SidebarEnd(): JSX.Element {
       <h2 className="mb-2 text-xs uppercase tracking-wide text-text-dim">
         פרטים
       </h2>
+      <CitiesList />
+
     </aside>
   );
 }
