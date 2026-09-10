@@ -2,10 +2,12 @@
  * @team     blue
  * @owner    blue-lead
  * @public   no
- * @updated  2026-09-09
+ * @updated  2026-09-10
  */
 
 import L, { type LayerGroup, type Map as LeafletMap } from "leaflet";
+
+const API_BASE_URL = "http://localhost:3000";
 
 type Interceptor = {
   name: string;
@@ -13,146 +15,79 @@ type Interceptor = {
 };
 
 type Launcher = {
-  id: number;
+  id: string;
   name: string;
   location: {
     lat: number;
     long: number;
   };
   range: number;
-};
-
-const launchers: Launcher[] = [
-  {
-    id: 1,
-    name: "ShieldNest-Lite",
-    location: {
-      lat: 33.0512,
-      long: 35.2845,
-    },
-    range: 40000,
-  },
-  {
-    id: 2,
-    name: "ShieldNest-Lite",
-    location: {
-      lat: 32.8341,
-      long: 35.195,
-    },
-    range: 40000,
-  },
-  {
-    id: 3,
-    name: "IronHook-SR",
-    location: {
-      lat: 33.185,
-      long: 35.572,
-    },
-    range: 60000,
-  },
-  {
-    id: 4,
-    name: "HorizonEye-MX",
-    location: {
-      lat: 32.981,
-      long: 35.421,
-    },
-    range: 25000,
-  },
-];
-
-const launcherInterceptors: Record<number, Interceptor[]> = {
-  1: [
-    {
-      name: "BuzzStop-15",
-      amount: 6,
-    },
-    {
-      name: "NetWing-30",
-      amount: 2,
-    },
-  ],
-
-  2: [
-    {
-      name: "SwarmMist-5",
-      amount: 500,
-    },
-  ],
-
-  3: [
-    {
-      name: "BuzzStop-15",
-      amount: 8,
-    },
-    {
-      name: "DartFox-S",
-      amount: 4,
-    },
-    {
-      name: "SpearMini-70",
-      amount: 2,
-    },
-  ],
-
-  4: [
-    {
-      name: "MicroNet-R",
-      amount: 10,
-    },
-    {
-      name: "NetWing-30",
-      amount: 5,
-    },
-  ],
+  interceptors: Interceptor[];
 };
 
 function createLauncherPopup(launcher: Launcher): string {
-  const interceptors = launcherInterceptors[launcher.id] ?? [];
+  const interceptors = Array.isArray(launcher.interceptors)
+    ? launcher.interceptors
+    : [];
 
-  const interceptorRows = interceptors
-    .map(
-      (interceptor) => `
-        <div style="
-          display:flex;
-          justify-content:space-between;
-          align-items:center;
-          padding:7px 0;
-          border-bottom:1px solid #30353b;
-        ">
+  const interceptorRows =
+    interceptors.length > 0
+      ? interceptors
+          .map(
+            (interceptor) => `
+              <tr>
+                <td style="
+                  padding:8px 4px;
+                  text-align:right;
+                  direction:ltr;
+                  border-bottom:1px solid #30353b;
+                ">
+                  ${interceptor.name}
+                </td>
 
-          <span style="
-            flex:1;
-            text-align:right;
-            direction:ltr;
-          ">
-            ${interceptor.name}
-          </span>
-
-          <strong style="
-            width:50px;
-            text-align:center;
-          ">
-            ${interceptor.amount}
-          </strong>
-
-        </div>
-      `,
-    )
-    .join("");
+                <td style="
+                  padding:8px 4px;
+                  width:60px;
+                  text-align:center;
+                  border-bottom:1px solid #30353b;
+                  font-weight:700;
+                ">
+                  ${interceptor.amount}
+                </td>
+              </tr>
+            `,
+          )
+          .join("")
+      : `
+          <tr>
+            <td
+              colspan="2"
+              style="
+                padding:10px 4px;
+                text-align:center;
+                color:#aeb5bc;
+              "
+            >
+              אין מיירטים במלאי
+            </td>
+          </tr>
+        `;
 
   return `
-    <div dir="rtl" style="
-      width:250px;
-      background:#11161b;
-      color:#f4f4f4;
-      border-radius:10px;
-      padding:14px;
-      font-family:Arial,sans-serif;
-      box-sizing:border-box;
-    ">
+    <div
+      dir="rtl"
+      style="
+        width:250px;
+        background:#11161b;
+        color:#f4f4f4;
+        border-radius:10px;
+        padding:14px;
+        font-family:Arial,sans-serif;
+        box-sizing:border-box;
+      "
+    >
 
-      <!-- Header - RTL -->
+      <!-- Header -->
 
       <div style="
         display:flex;
@@ -204,7 +139,6 @@ function createLauncherPopup(launcher: Launcher): string {
         margin:12px 0;
       "></div>
 
-
       <!-- טווח שיגור -->
 
       <div style="
@@ -243,8 +177,6 @@ function createLauncherPopup(launcher: Launcher): string {
 
         </div>
 
-        <!-- שם השדה בצד ימין -->
-
         <span style="
           color:#aeb5bc;
           flex:1;
@@ -252,8 +184,6 @@ function createLauncherPopup(launcher: Launcher): string {
         ">
           טווח שיגור
         </span>
-
-        <!-- הנתון בצד שמאל -->
 
         <strong style="
           text-align:left;
@@ -263,7 +193,6 @@ function createLauncherPopup(launcher: Launcher): string {
         </strong>
 
       </div>
-
 
       <!-- מיקום המשגר -->
 
@@ -305,12 +234,9 @@ function createLauncherPopup(launcher: Launcher): string {
               cy="9"
               r="2.5"
             />
-
           </svg>
 
         </div>
-
-        <!-- שם השדה בצד ימין -->
 
         <span style="
           color:#aeb5bc;
@@ -319,8 +245,6 @@ function createLauncherPopup(launcher: Launcher): string {
         ">
           מיקום המשגר
         </span>
-
-        <!-- הנתון בצד שמאל -->
 
         <strong style="
           font-size:12px;
@@ -334,13 +258,11 @@ function createLauncherPopup(launcher: Launcher): string {
 
       </div>
 
-
       <div style="
         height:1px;
         background:#30353b;
         margin:12px 0;
       "></div>
-
 
       <!-- טילי יירוט -->
 
@@ -403,92 +325,130 @@ function createLauncherPopup(launcher: Launcher): string {
 
       </div>
 
+      <!-- טבלת מיירטים -->
 
-      <!-- כותרות שם וכמות -->
-
-      <div style="
-        display:flex;
-        justify-content:space-between;
-        align-items:center;
-        padding:6px 0;
-        color:#aeb5bc;
+      <table style="
+        width:100%;
+        border-collapse:collapse;
+        table-layout:fixed;
         font-size:12px;
-        border-bottom:1px solid #30353b;
       ">
 
-        <span style="
-          flex:1;
-          text-align:right;
-        ">
-          שם
-        </span>
+        <thead>
+          <tr style="
+            color:#aeb5bc;
+            border-bottom:1px solid #30353b;
+          ">
 
-        <span style="
-          width:50px;
-          text-align:center;
-        ">
-          כמות
-        </span>
+            <th style="
+              padding:6px 4px;
+              text-align:right;
+              font-weight:400;
+            ">
+              שם
+            </th>
 
-      </div>
+            <th style="
+              padding:6px 4px;
+              width:60px;
+              text-align:center;
+              font-weight:400;
+            ">
+              כמות
+            </th>
 
+          </tr>
+        </thead>
 
-      <!-- נתוני טילי היירוט -->
+        <tbody>
+          ${interceptorRows}
+        </tbody>
 
-      ${interceptorRows}
+      </table>
 
     </div>
   `;
 }
 
-export function mountBlueLayer(group: LayerGroup, _map: LeafletMap): void {
-  const blueIcon = L.icon({
-    iconUrl: "/icons/blue-marker.svg",
-    iconSize: [32, 32],
-    iconAnchor: [16, 16],
-  });
+export async function mountBlueLayer(
+  group: LayerGroup,
+  _map: LeafletMap,
+): Promise<void> {
+  try {
+    const response = await fetch(
+      `${API_BASE_URL}/api/logistics/launcher-data`,
+    );
 
-  launchers.forEach((launcher) => {
-    L.marker([launcher.location.lat, launcher.location.long], {
-      icon: blueIcon,
-    })
-      .bindPopup(createLauncherPopup(launcher), {
-        className: "blue-launcher-popup",
-        closeButton: true,
-        maxWidth: 280,
-        minWidth: 280,
-      })
-      .addTo(group);
-  });
+    if (!response.ok) {
+      throw new Error(
+        `Failed to fetch launcher data: ${response.status}`,
+      );
+    }
 
-  const styleId = "blue-launcher-popup-styles";
+    const launchers: Launcher[] = await response.json();
 
-  if (!document.getElementById(styleId)) {
-    const style = document.createElement("style");
+    const blueIcon = L.icon({
+      iconUrl: "/icons/blue-marker.svg",
+      iconSize: [32, 32],
+      iconAnchor: [16, 16],
+    });
 
-    style.id = styleId;
+    launchers.forEach((launcher) => {
+      L.marker(
+        [
+          launcher.location.lat,
+          launcher.location.long,
+        ],
+        {
+          icon: blueIcon,
+        },
+      )
+        .bindPopup(
+          createLauncherPopup(launcher),
+          {
+            className: "blue-launcher-popup",
+            closeButton: true,
+            maxWidth: 280,
+            minWidth: 280,
+          },
+        )
+        .addTo(group);
+    });
 
-    style.innerHTML = `
-      .blue-launcher-popup
-      .leaflet-popup-content-wrapper {
-        background: transparent !important;
-        box-shadow: none !important;
-        padding: 0 !important;
-      }
+    const styleId = "blue-launcher-popup-styles";
 
-      .blue-launcher-popup
-      .leaflet-popup-content {
-        margin: 0 !important;
-        width: 280px !important;
-      }
+    if (!document.getElementById(styleId)) {
+      const style = document.createElement("style");
 
-      .blue-launcher-popup
-      .leaflet-popup-tip {
-        background: #11161b !important;
-        box-shadow: none !important;
-      }
-    `;
+      style.id = styleId;
 
-    document.head.appendChild(style);
+      style.innerHTML = `
+        .blue-launcher-popup
+        .leaflet-popup-content-wrapper {
+          background: transparent !important;
+          box-shadow: none !important;
+          padding: 0 !important;
+        }
+
+        .blue-launcher-popup
+        .leaflet-popup-content {
+          margin: 0 !important;
+          width: 280px !important;
+        }
+
+        .blue-launcher-popup
+        .leaflet-popup-tip {
+          background: #11161b !important;
+          box-shadow: none !important;
+        }
+      `;
+
+      document.head.appendChild(style);
+    }
+  } catch (error) {
+    console.error(
+      "Failed to load blue launcher layer:",
+      error,
+    );
   }
 }
