@@ -40,3 +40,7 @@ logisticsRoutes.get(
   "/deployments/:id",
   asyncHandler(logistics.getDeploymentById),
 );
+logisticsRoutes.post(
+  "/deployments",
+  asyncHandler(logistics.createDeployment),
+);

@@ -10,6 +10,7 @@
 import type { Request, Response } from "express";
 import * as logisticsService from "../services/logistics.service";
 import { HttpError } from "../shared/httpError";
+import { DeploymentStatus } from "../db/entities/deployment.entity";
 
 export async function getStatus(_req: Request, res: Response): Promise<void> {
   res.json(await logisticsService.getStatus());
@@ -112,5 +113,35 @@ export async function getDeploymentById(req: Request, res: Response): Promise<vo
     res.json(deployment);
   } catch (error) {
     res.status(500).json({ message: "Error retrieving deployment details", error });
+  }
+}
+
+export async function createDeployment(req: Request, res: Response): Promise<void> {
+  try {
+    const { name, status } = req.body;
+
+    // 1. Validate required fields
+    if (!name || typeof name !== "string" || name.trim() === "") {
+      res.status(400).json({ error: "name is required and must be a non-empty string" });
+      return;
+    }
+
+    if (!status || !Object.values(DeploymentStatus).includes(status)) {
+      res.status(400).json({
+        error: `status is required and must be one of: ${Object.values(DeploymentStatus).join(", ")}`,
+      });
+      return;
+    }
+
+    // 2. Insert into DB via service
+    const createdDeployment = await logisticsService.createDeployment({
+      name: name.trim(),
+      status: status as DeploymentStatus,
+    });
+
+    // 3. Return 201 Created with the new deployment
+    res.status(201).json(createdDeployment);
+  } catch (error) {
+    res.status(500).json({ message: "Error creating deployment", error });
   }
 }

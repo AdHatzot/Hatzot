@@ -3,8 +3,9 @@ import { LiveLauncher } from "./liveLauncher.entity";
 
 export enum DeploymentStatus {
   // Add your custom enum values here as defined in hatzot.deployment_status
-  ACTIVE = "ACTIVE",
-  INACTIVE = "INACTIVE",
+  REAL = "Real",
+  SAVED = "Saved",
+  DRAFT = "Draft"
 }
 
 @Entity({ schema: "hatzot", name: "deployment" })
@@ -24,4 +25,9 @@ export class Deployment {
 
   @OneToMany(() => LiveLauncher, (liveLauncher) => liveLauncher.deployment)
   liveLaunchers!: LiveLauncher[];
+}
+
+export interface DeploymentDto {
+  name: string;
+  status: DeploymentStatus;
 }

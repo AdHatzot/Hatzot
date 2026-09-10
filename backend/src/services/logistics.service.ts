@@ -23,7 +23,7 @@ import {
 } from "../repositories/logistics.repository";
 import { LauncherType } from "../db/entities/launcherType.entity";
 import { InterceptorType } from "../db/entities/InterceptorType.entity";
-import { Deployment } from "../db/entities/deployment.entity";
+import { Deployment, DeploymentDto } from "../db/entities/deployment.entity";
 
 export async function getStatus(): Promise<{ team: Team; status: string }> {
   return { team: "logistics", status: "empty" };
@@ -197,4 +197,15 @@ export async function getDeploymentById(deploymentId: number) {
       };
     }),
   };
+}
+
+export async function createDeployment(data: DeploymentDto): Promise<Deployment> {
+  // Create an entity instance
+  const newDeployment = logisticsDeploymentRepository.create({
+    name: data.name,
+    status: data.status,
+  });
+
+  // Save/Insert into database
+  return await logisticsDeploymentRepository.save(newDeployment);
 }
