@@ -40,7 +40,7 @@ export function AlertsPanel(): JSX.Element {
 
   return (
     <section data-testid="alerts-panel" className="flex h-full flex-col">
-      <div className="mt-4 flex overflow-hidden rounded border border-line">
+      <div className="mt-4 flex rounded border border-line">
         <button
           className={`flex-1 border-l border-line py-2 text-sm font-medium text-text ${isActiveTab ? "bg-panel-2" : ""}`}
           onClick={() => setIsActiveTab(true)}

@@ -4,7 +4,7 @@ import { LiveLauncher } from "./liveLauncher.entity";
 export enum DeploymentStatus {
   REAL = "Real",
   SAVED = "Saved",
-  DRAFT = "Draft",
+  DRAFT = "Draft"
 }
 
 @Entity({ schema: "hatzot", name: "deployment" })
@@ -24,4 +24,9 @@ export class Deployment {
 
   @OneToMany(() => LiveLauncher, (liveLauncher) => liveLauncher.deployment)
   liveLaunchers!: LiveLauncher[];
+}
+
+export interface DeploymentDto {
+  name: string;
+  status: DeploymentStatus;
 }

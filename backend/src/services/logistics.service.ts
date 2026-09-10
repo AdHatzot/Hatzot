@@ -26,6 +26,7 @@ import {
   logisticsInterceptorTypeRepository,
 } from "../repositories/logistics.repository";
 import { LauncherType } from "../db/entities/launcherType.entity";
+import { Deployment, DeploymentStatus } from "../db/entities/deployment.entity";
 import { InterceptorType } from "../db/entities/interceptorType.entity";
 import { LauncherData } from "../utils/LiveLauncherTypes";
 import * as logisticsRepository from "../repositories/logistics.repository";
@@ -54,62 +55,6 @@ export async function fireIntercept(
   };
 }
 
-export async function getAll() {
-  return await logisticsDeploymentRepository.find();
-}
-
-export async function getLiveDeployments(
-  deploymentId?: number,
-): Promise<
-  Array<{
-    deployment: unknown;
-    launcherId: string;
-    location: {
-      latitude: number | null;
-      longitude: number | null;
-      asl: number | null;
-      agl: number | null;
-    };
-    ammunitionAmount: number;
-  }>
-> {
-  const targetDeploymentId = deploymentId ?? 1;
-
-  const results = await logisticsLiveLauncherRepository
-    .createQueryBuilder("launcher")
-    .innerJoinAndSelect("launcher.deployment", "deployment")
-    .leftJoin("launcher.launcherAmmunitions", "ammunition")
-    .where("deployment.id = :deploymentId", { deploymentId: targetDeploymentId })
-    .select([
-      "deployment.id",
-      "deployment.name",
-      "deployment.status",
-      "launcher.id",
-      "launcher.latitude",
-      "launcher.longitude",
-      "launcher.asl",
-      "launcher.agl",
-      "COALESCE(SUM(ammunition.quantity), 0) AS total_ammunition_quantity",
-    ])
-    .groupBy("launcher.id")
-    .addGroupBy("deployment.id")
-    .getRawAndEntities();
-
-  return results.entities.map((entity, index) => ({
-    deployment: entity.deployment,
-    launcherId: entity.id,
-    location: {
-      latitude: entity.latitude,
-      longitude: entity.longitude,
-      asl: entity.asl,
-      agl: entity.agl,
-    },
-    ammunitionAmount: Number(
-      results.raw[index]?.total_ammunition_quantity ?? 0,
-    ),
-  }));
-}
-
 export async function getAllLauncherTypes(): Promise<Array<LauncherType>> {
   return await logisticsLauncherTypeRepository.find();
 }
@@ -118,6 +63,140 @@ export async function getAllInterceptorTypes(): Promise<Array<InterceptorType>> 
   return await logisticsInterceptorTypeRepository.find();
 }
 
+export async function getAllDeployments(): Promise<Array<Deployment>> {
+  return await logisticsDeploymentRepository.find();
+}
+
+export async function getDeploymentById(deploymentId: number) {
+  const deployment = await logisticsDeploymentRepository.findOne({
+    where: {
+      id: deploymentId,
+    },
+    relations: {
+      liveLaunchers: {
+        launcherAmmunitions: true,
+      },
+    },
+  });
+
+  if (!deployment) {
+    return null;
+  }
+
+  return {
+    id: deployment.id,
+    name: deployment.name,
+    status: deployment.status,
+    launchers: (deployment.liveLaunchers || []).map((launcher) => {
+      const totalAmmunition = (launcher.launcherAmmunitions || []).reduce(
+        (sum, ammo) => sum + (ammo.quantity || 0),
+        0
+      );
+
+      return {
+        id: launcher.id,
+        active: launcher.active,
+        location: {
+          latitude: launcher.latitude,
+          longitude: launcher.longitude,
+          asl: launcher.asl,
+          agl: launcher.agl,
+        },
+        ammunitionAmount: totalAmmunition,
+      };
+    }),
+  };
+}
+
+
+export async function updateDeploymentStatus(
+  id: number,
+  newStatus: DeploymentStatus
+): Promise<Deployment> {
+  // 1. Check if target deployment exists
+  const targetDeployment = await logisticsDeploymentRepository.findOne({ where: { id } });
+
+  if (!targetDeployment) {
+    throw new Error(`NOT_FOUND: Deployment with ID ${id} does not exist`);
+  }
+
+  // 2. Demote existing LIVE deployment if target is becoming LIVE
+  if (newStatus === DeploymentStatus.REAL) {
+    await logisticsDeploymentRepository.update(
+      { status: DeploymentStatus.REAL },
+      { status: DeploymentStatus.SAVED }
+    );
+  }
+
+  // 3. Save updated status
+  targetDeployment.status = newStatus;
+  return await logisticsDeploymentRepository.save(targetDeployment);
+}
+
+export async function getRealDeployment(): Promise<Deployment | null> {
+  // Using findOne with where condition
+  const deployment = await logisticsDeploymentRepository.findOne({
+    where: {
+      status: DeploymentStatus.REAL, // Or "REAL" / DeploymentStatus.LIVE based on your enum
+    },
+    relations: {
+      liveLaunchers: true, // Optional: includes associated launchers
+    },
+  });
+
+  return deployment;
+}
+
+export async function getLiveLaunchersByDeploymentId(deploymentId: number) {
+  let targetDeploymentId = deploymentId;
+
+  // If no launcherId is provided, resolve the ID from the active real deployment
+  if (!targetDeploymentId) {
+    const realDeployment = await getRealDeployment();
+
+    if (!realDeployment) {
+      return null; // Return null early if no real deployment exists
+    }
+
+    targetDeploymentId = realDeployment.id;
+  }
+
+  const launchers = await logisticsLiveLauncherRepository
+    .createQueryBuilder("launcher")
+    .innerJoinAndSelect("launcher.deployment", "deployment")
+    .leftJoinAndSelect("launcher.launcherType", "launcherType")
+    .leftJoinAndSelect("launcher.launcherAmmunitions", "ammunition")
+    .leftJoinAndSelect("ammunition.interceptorType", "interceptorType")
+    .where("deployment.id = :targetDeploymentId", { targetDeploymentId })
+    .getMany();
+
+  if (!launchers.length) {
+    return [];
+  }
+
+  return launchers.map(mapLiveLauncher);
+}
+
+const mapLiveLauncher = (launcher: LiveLauncher) => {
+  return {
+    id: launcher.id,
+    name: launcher.launcherType?.name ?? "",
+    deployment: {
+      id: launcher.deployment?.id,
+      name: launcher.deployment?.name,
+      status: launcher.deployment?.status,
+    },
+    location: {
+      lat: launcher.latitude,
+      long: launcher.longitude,
+    },
+    range: launcher.launcherType?.rangeM ?? 0,
+    interceptors: (launcher.launcherAmmunitions || []).map((ammunition) => ({
+      name: ammunition.interceptorType?.name ?? "",
+      amount: ammunition.quantity,
+    })),
+  };
+}
 export async function createDeployment(request: CreateDeploymentRequest) {
   return await createDeploymentInRepository(request);
 }
@@ -145,8 +224,21 @@ const mapLauncher = (launcher: LiveLauncher): LauncherData => {
   };
 };
 
-export const getAllLaunchers = async (): Promise<LauncherData[]> => {
-  const launchers = await logisticsRepository.getLunchersFromDb();
+export const getAllLaunchers = async (deploymentId: number): Promise<LauncherData[] | null> => {
+  let targetDeploymentId = deploymentId;
+
+  // If no launcherId is provided, resolve the ID from the active real deployment
+  if (!targetDeploymentId) {
+    const realDeployment = await getRealDeployment();
+
+    if (!realDeployment) {
+      return null; // Return null early if no real deployment exists
+    }
+
+    targetDeploymentId = realDeployment.id;
+  }
+
+  const launchers = await logisticsRepository.getLaunchersFromDb(targetDeploymentId);
 
   return launchers.map(mapLauncher);
 };

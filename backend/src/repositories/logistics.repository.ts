@@ -91,13 +91,13 @@ export const logisticsLauncherTypeRepository =
 export const logisticsInterceptorTypeRepository =
   dataSource.getRepository(InterceptorType);
 
-export const getLunchersFromDb = async (): Promise<LiveLauncher[]> => {
+export const getLaunchersFromDb = async (deploymentId: number): Promise<LiveLauncher[]> => {
   return logisticsLiveLauncherRepository
     .createQueryBuilder("launcher")
     .leftJoinAndSelect("launcher.launcherType", "launcherType")
     .leftJoinAndSelect("launcher.launcherAmmunitions", "ammunition")
     .leftJoinAndSelect("ammunition.interceptorType", "interceptorType")
-    .where("launcher.active = :active", { active: true })
+    .where("launcher.deployment_id = :deploymentId", { deploymentId })
     .getMany();
 };
 

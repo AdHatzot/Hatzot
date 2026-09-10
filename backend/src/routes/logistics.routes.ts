@@ -15,10 +15,9 @@ export const logisticsRoutes: Router = Router();
 
 logisticsRoutes.get("/", asyncHandler(logistics.getStatus));
 logisticsRoutes.post("/fire-intercept", asyncHandler(logistics.fireIntercept));
-logisticsRoutes.get("/all", asyncHandler(logistics.getAll));
 logisticsRoutes.get(
   "/launchers",
-  asyncHandler(logistics.getLiveDeployments),
+  asyncHandler(logistics.getAllLiveLaunchers),
 );
 logisticsRoutes.get(
   "/launcher-types",
@@ -28,14 +27,33 @@ logisticsRoutes.get(
   "/interceptor-types",
   asyncHandler(logistics.getAllInterceptorTypes),
 );
+logisticsRoutes.get(
+    "/launcher",
+    asyncHandler(logistics.getLiveLauncherByDeploymentId),
+);
+logisticsRoutes.get(
+  "/deployments",
+  asyncHandler(logistics.getAllDeployments),
+);
+logisticsRoutes.get(
+  "/deployments/live",
+  asyncHandler(logistics.getRealDeployment),
+);
+logisticsRoutes.get(
+  "/deployments/:id",
+  asyncHandler(logistics.getDeploymentById),
+);
 logisticsRoutes.post(
   "/deployment",
   asyncHandler(logistics.createDeployment),
 );
-logisticsRoutes.post(
+logisticsRoutes.patch(
   "/deployments",
-  asyncHandler(logistics.createDeployment),
+  asyncHandler(logistics.updateDeploymentStatusController),
 );
+logisticsRoutes.get("/launcher-data", logistics.getAllLaunchers);
+logisticsRoutes.get("/launchers/:id", logistics.getLauncherById);
+
 logisticsRoutes.patch(
   "/deployments/:id",
   asyncHandler(logistics.updateDeployment),
