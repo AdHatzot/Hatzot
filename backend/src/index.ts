@@ -9,21 +9,22 @@ import "reflect-metadata";
  * Bootstrap: express app + http server + ws hub. One app.use per team; the
  * per-team work lives in routes/ → controllers/ → services/ → repositories/.
  */
-import { createServer } from "node:http";
-import express from "express";
 import cors from "cors";
-import { attachHub } from "./ws";
+import express from "express";
+import { createServer } from "node:http";
 import { initDatabase } from "./db";
-import { redRoutes } from "./routes/red.routes";
-import { blueRoutes } from "./routes/blue.routes";
+import { startAlertsListener } from "./redis/alerts.listener";
+import { redis } from "./redis/redis.client";
 import { alertsRoutes } from "./routes/alerts.routes";
+import { blueRoutes } from "./routes/blue.routes";
 import { logisticsRoutes } from "./routes/logistics.routes";
 import { loopRoutes } from "./routes/loop.routes";
-import { startBlueReloadTicker } from "./services/blue.service";
+import { redRoutes } from "./routes/red.routes";
 import { startDroneAlertsTicker } from "./services/alerts.service";
-import { redis } from "./redis/redis.client";
-import { startAlertsListener } from "./redis/alerts.listener";
+import { startBlueReloadTicker } from "./services/blue.service";
+import { attachHub } from "./ws";
 
+import { interceptionsRoutes } from "./routes/interceptions.routes";
 import { errorHandler } from "./shared/errorHandler";
 
 const PORT = Number(process.env.PORT ?? 3000);
@@ -42,6 +43,7 @@ app.use("/api/blue", blueRoutes);
 app.use("/api/alerts", alertsRoutes);
 app.use("/api/logistics", logisticsRoutes);
 app.use("/api/loop", loopRoutes);
+app.use("/api/interceptions", interceptionsRoutes);
 
 // Rejections from asyncHandler land here — JSON, never Express's HTML page.
 app.use(errorHandler);

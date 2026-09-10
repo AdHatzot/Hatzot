@@ -11,8 +11,10 @@
   },
   "dependencies": {
     "@turf/turf": "^7.4.0",
+    "axios": "^1.20.0",
     "cors": "^2.8.5",
     "express": "^4.21.2",
+    "geojson": "^0.5.0",
     "pg": "^8.23.0",
     "redis": "^6.2.1",
     "reflect-metadata": "^0.2.2",
@@ -23,8 +25,8 @@
   "devDependencies": {
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
+    "@types/geojson": "^7946.0.16",
     "@types/node": "^22.5.4",
-    "@types/shapefile": "^0.6.4",
     "@types/ws": "^8.5.12",
     "@typescript-eslint/eslint-plugin": "^8.4.0",
     "@typescript-eslint/parser": "^8.4.0",

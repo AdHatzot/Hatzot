@@ -15,13 +15,13 @@
  */
 
 // import { createRepository, type Repository } from "../db";
-import { Deployment } from "../db/entities/deployment.entity";
+import { Deployment, DeploymentStatus } from "../db/entities/deployment.entity";
 import { dataSource } from "../db/data-source";
 import { LauncherAmmunition } from "../db/entities/launcherAmmunition.entity";
 import { LiveLauncher } from "../db/entities/liveLauncher.entity";
 import { HttpError } from "../shared/httpError";
 import { LauncherType } from "../db/entities/launcherType.entity";
-import { InterceptorType } from "../db/entities/InterceptorType.entity";
+import { InterceptorType } from "../db/entities/interceptorType.entity";
 
 export interface FireInterceptRequest {
   launcherId: number;
@@ -34,19 +34,70 @@ export interface FireInterceptResult {
   reloadTimeS: number;
 }
 
+export interface CreateDeploymentRow {
+  launcher_type_name: string;
+  longitude: number;
+  latitude: number;
+  asl: number;
+  agl: number;
+  amount: number;
+}
+
+export interface CreateDeploymentRequest {
+  name: string;
+  rows: CreateDeploymentRow[];
+}
+
+export interface CreateDeploymentResult {
+  deploymentId: number;
+  deploymentName: string;
+  deployment: Deployment;
+  launchersCreated: number;
+  launchers: LiveLauncher[];
+}
+
+export interface UpdateDeploymentRow {
+  id?: string;
+  launcher_type_name?: string;
+  longitude?: number;
+  latitude?: number;
+  asl?: number;
+  agl?: number;
+  amount?: number;
+  active?: boolean;
+}
+
+export interface UpdateDeploymentRequest {
+  name?: string;
+  rows?: UpdateDeploymentRow[];
+}
+
+export interface UpdateDeploymentResult {
+  deploymentId: number;
+  deploymentName: string;
+  deployment: Deployment;
+  launchers: LiveLauncher[];
+}
+
 export const logisticsDeploymentRepository =
   dataSource.getRepository(Deployment);
 
 export const logisticsLiveLauncherRepository =
   dataSource.getRepository(LiveLauncher);
 
-export const getLunchersFromDb = async (): Promise<LiveLauncher[]> => {
+export const logisticsLauncherTypeRepository =
+  dataSource.getRepository(LauncherType);
+
+export const logisticsInterceptorTypeRepository =
+  dataSource.getRepository(InterceptorType);
+
+export const getLaunchersFromDb = async (deploymentId: number): Promise<LiveLauncher[]> => {
   return logisticsLiveLauncherRepository
     .createQueryBuilder("launcher")
     .leftJoinAndSelect("launcher.launcherType", "launcherType")
     .leftJoinAndSelect("launcher.launcherAmmunitions", "ammunition")
     .leftJoinAndSelect("ammunition.interceptorType", "interceptorType")
-    .where("launcher.active = :active", { active: true })
+    .where("launcher.deployment_id = :deploymentId", { deploymentId })
     .getMany();
 };
 
@@ -61,11 +112,138 @@ export const getLauncherFromDb = async (id: string): Promise<LiveLauncher | null
     .getOne();
 };
 
-export const logisticsLauncherTypeRepository =
-  dataSource.getRepository(LauncherType);
+export async function createDeployment(
+  request: CreateDeploymentRequest,
+): Promise<CreateDeploymentResult> {
+  return dataSource.transaction(async (manager) => {
+    // 1. Create the deployment record
+    const deploymentRepo = manager.getRepository(Deployment);
+    const deployment = deploymentRepo.create({
+      name: request.name,
+      status: DeploymentStatus.SAVED,
+    });
+    const savedDeployment = await deploymentRepo.save(deployment);
 
-export const logisticsInterceptorTypeRepository =
-  dataSource.getRepository(InterceptorType);
+    // 2. Resolve launcher type names to IDs
+    const launcherTypeRepo = manager.getRepository(LauncherType);
+    const allLauncherTypes = await launcherTypeRepo.find();
+    const typeNameToId = new Map(
+      allLauncherTypes.map((lt) => [lt.name.toLowerCase(), lt.id]),
+    );
+
+    // 3. Validate all launcher type names exist
+    const invalidTypeNames: string[] = [];
+    for (const row of request.rows) {
+      if (!typeNameToId.has(row.launcher_type_name.toLowerCase())) {
+        invalidTypeNames.push(row.launcher_type_name);
+      }
+    }
+
+    if (invalidTypeNames.length > 0) {
+      const unique = [...new Set(invalidTypeNames)];
+      throw new HttpError(
+        400,
+        `Unknown launcher type(s): ${unique.join(", ")}. Available: ${allLauncherTypes.map((lt) => lt.name).join(", ")}`,
+      );
+    }
+
+    // 4. Create live launcher records
+    const liveLauncherRepo = manager.getRepository(LiveLauncher);
+    const launchers = request.rows.map((row) => {
+      return liveLauncherRepo.create({
+        launcherTypeId: typeNameToId.get(row.launcher_type_name.toLowerCase())!,
+        deploymentId: savedDeployment.id,
+        longitude: row.longitude,
+        latitude: row.latitude,
+        asl: row.asl,
+        agl: row.agl,
+        amount: row.amount,
+        active: true,
+      });
+    });
+
+    await liveLauncherRepo.save(launchers);
+
+    const savedLaunchers = await liveLauncherRepo.find({
+      where: { deploymentId: savedDeployment.id },
+      relations: { launcherType: true },
+      order: { id: "ASC" },
+    });
+
+    return {
+      deploymentId: savedDeployment.id,
+      deploymentName: savedDeployment.name,
+      deployment: savedDeployment,
+      launchersCreated: savedLaunchers.length,
+      launchers: savedLaunchers,
+    };
+  });
+}
+
+export async function updateDeployment(
+  deploymentId: number,
+  request: UpdateDeploymentRequest,
+): Promise<UpdateDeploymentResult> {
+  return dataSource.transaction(async (manager) => {
+    const deploymentRepo = manager.getRepository(Deployment);
+    const deployment = await deploymentRepo.findOne({
+      where: { id: deploymentId },
+    });
+
+    if (!deployment) {
+      throw new HttpError(404, `Deployment with id ${deploymentId} was not found`);
+    }
+
+    if (request.name !== undefined && request.name.trim().length > 0) {
+      deployment.name = request.name.trim();
+      await deploymentRepo.save(deployment);
+    }
+
+    const liveLauncherRepo = manager.getRepository(LiveLauncher);
+
+    if (Array.isArray(request.rows) && request.rows.length > 0) {
+      const launcherTypeRepo = manager.getRepository(LauncherType);
+      const allLauncherTypes = await launcherTypeRepo.find();
+      const typeNameToId = new Map(
+        allLauncherTypes.map((lt) => [lt.name.toLowerCase(), lt.id]),
+      );
+
+      for (const row of request.rows) {
+        if (row.id) {
+          const existing = await liveLauncherRepo.findOne({
+            where: { id: row.id, deploymentId },
+          });
+          if (existing) {
+            if (row.launcher_type_name) {
+              const typeId = typeNameToId.get(row.launcher_type_name.toLowerCase());
+              if (typeId) existing.launcherTypeId = typeId;
+            }
+            if (row.longitude !== undefined) existing.longitude = row.longitude;
+            if (row.latitude !== undefined) existing.latitude = row.latitude;
+            if (row.asl !== undefined) existing.asl = row.asl;
+            if (row.agl !== undefined) existing.agl = row.agl;
+            if (row.amount !== undefined) existing.amount = row.amount;
+            if (row.active !== undefined) existing.active = row.active;
+            await liveLauncherRepo.save(existing);
+          }
+        }
+      }
+    }
+
+    const launchers = await liveLauncherRepo.find({
+      where: { deploymentId },
+      relations: { launcherType: true },
+      order: { id: "ASC" },
+    });
+
+    return {
+      deploymentId: deployment.id,
+      deploymentName: deployment.name,
+      deployment,
+      launchers,
+    };
+  });
+}
 
 export async function fireIntercept(
   request: FireInterceptRequest,

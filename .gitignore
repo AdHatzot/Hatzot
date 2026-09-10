@@ -9,3 +9,4 @@ dist-ssr
 
 .claude/settings.local.json
 .vite
+package-lock.json
