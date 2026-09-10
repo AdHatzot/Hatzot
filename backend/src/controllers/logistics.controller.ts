@@ -179,3 +179,18 @@ export async function updateDeploymentStatusController(
     res.status(500).json({ message: "Error updating deployment status", error: error.message });
   }
 }
+
+export async function getRealDeployment(_req: Request, res: Response): Promise<void> {
+  try {
+    const deployment = await logisticsService.getRealDeployment();
+
+    if (!deployment) {
+      res.status(404).json({ error: "No active real deployment found" });
+      return;
+    }
+
+    res.json(deployment);
+  } catch (error: any) {
+    res.status(500).json({ message: "Error fetching real deployment", error: error.message });
+  }
+}

@@ -233,3 +233,17 @@ export async function updateDeploymentStatus(
   targetDeployment.status = newStatus;
   return await logisticsDeploymentRepository.save(targetDeployment);
 }
+
+export async function getRealDeployment(): Promise<Deployment | null> {
+  // Using findOne with where condition
+  const deployment = await logisticsDeploymentRepository.findOne({
+    where: {
+      status: DeploymentStatus.REAL, // Or "REAL" / DeploymentStatus.LIVE based on your enum
+    },
+    relations: {
+      liveLaunchers: true, // Optional: includes associated launchers
+    },
+  });
+
+  return deployment;
+}

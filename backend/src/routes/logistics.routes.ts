@@ -37,6 +37,10 @@ logisticsRoutes.get(
   asyncHandler(logistics.getAllDeployments),
 );
 logisticsRoutes.get(
+  "/deployments/live",
+  asyncHandler(logistics.getRealDeployment),
+);
+logisticsRoutes.get(
   "/deployments/:id",
   asyncHandler(logistics.getDeploymentById),
 );
