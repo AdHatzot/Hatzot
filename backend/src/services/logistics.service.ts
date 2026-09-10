@@ -9,13 +9,33 @@
  * via broadcast() from ../ws. No Express types in here.
  */
 import type { Team } from "../types";
-import { logisticsDeploymentRepository } from "../repositories/logistics.repository";
+import {
+  fireIntercept as fireInterceptInRepository,
+  type FireInterceptRequest,
+} from "../repositories/logistics.repository";
+import { dataSource } from "../db/data-source";
+import { LiveLauncher } from "../db/entities/liveLauncher.entity";
 
 export async function getStatus(): Promise<{ team: Team; status: string }> {
   return { team: "logistics", status: "empty" };
 }
 
+export async function fireIntercept(
+  request: FireInterceptRequest
+): Promise<{ launcherId: string; interceptorTypeId: number }> {
+  const result = await fireInterceptInRepository(request);
 
-export async function getAll() {
-  return await logisticsDeploymentRepository.find();
+  setTimeout(() => {
+    void dataSource
+      .getRepository(LiveLauncher)
+      .update({ id: result.launcherId }, { active: true })
+      .catch((error: unknown) => {
+        console.error("Failed to reactivate launcher", error);
+      });
+  }, result.reloadTimeS * 1000);
+
+  return {
+    launcherId: result.launcherId,
+    interceptorTypeId: result.interceptorTypeId,
+  };
 }
