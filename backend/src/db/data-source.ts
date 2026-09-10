@@ -34,9 +34,6 @@ import { LauncherAmmunition } from "./entities/launcherAmmunition.entity";
 import { LauncherType } from "./entities/launcherType.entity";
 import { LiveLauncher } from "./entities/liveLauncher.entity";
 import { Interception } from "./entities/interception.entity";
-import { Drone } from "./entities/drone.entity";
-import { DroneType } from "./entities/droneType.entity";
-
 import { Drone } from "./entities/red/drone.entity";
 import { DroneType } from "./entities/red/drone-type.entity";
 import { DronePosition } from "./entities/red/drone-position.entity";
@@ -60,8 +57,6 @@ export const dataSource = new DataSource({
     LauncherAmmunition,
     InterceptorType,
     Interception,
-    Drone,
-    DroneType,
     Drone,
     DroneType,
     DronePosition,

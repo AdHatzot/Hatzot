@@ -1,6 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from "typeorm";
 import { InterceptorType } from "./InterceptorType.entity";
-import { Drone } from "./drone.entity";
+import { Drone } from "./red/drone.entity";
 
 export enum InterceptionStatus {
   PENDING = "PENDING",
