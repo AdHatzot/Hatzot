@@ -1,11 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from "typeorm";
 import { LauncherAmmunition } from "./launcherAmmunition.entity";
 
-export interface SuccessRateEntry {
-  droneType: string;
-  successRate: number;
-}
-
 @Entity({ schema: "hatzot", name: "interceptor_type" })
 export class InterceptorType {
   @PrimaryGeneratedColumn({ type: "smallint" })
@@ -21,7 +16,7 @@ export class InterceptorType {
   price!: number;
 
   @Column({ type: "jsonb", name: "estimated_success_rate", nullable: true })
-  estimatedSuccessRate!: SuccessRateEntry[];
+  estimatedSuccessRate!: Record<string, any>;
 
   @Column({ type: "smallint", nullable: true })
   capacity!: number;
