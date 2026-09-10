@@ -24,8 +24,8 @@ import {
   logisticsInterceptorTypeRepository,
 } from "../repositories/logistics.repository";
 import { LauncherType } from "../db/entities/launcherType.entity";
-import { InterceptorType } from "../db/entities/InterceptorType.entity";
 import { Deployment, DeploymentStatus } from "../db/entities/deployment.entity";
+import { InterceptorType } from "../db/entities/interceptorType.entity";
 import { LauncherData } from "../utils/LiveLauncherTypes";
 import * as logisticsRepository from "../repositories/logistics.repository";
 
