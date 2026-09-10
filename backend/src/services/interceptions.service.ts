@@ -6,7 +6,7 @@
  *
  */
 
-import { interceptionsRepository } from "../repositories/interceptions.repository";
+import { getSucessRate, interceptionsRepository } from "../repositories/interceptions.repository";
 import { InterceptionStatus } from "../db/entities/interception.entity";
 
 async function fetchInterceptionData(drones_id: number[]) {
@@ -47,4 +47,14 @@ export async function createInterception(drones_id: number[]): Promise<void> {
 
   console.log(await Promise.all(saves));
   await Promise.all(saves);
+}
+
+export async function getDidIntercept(InterceptionId: number): Promise<boolean> {
+  const successRate = await getSucessRate(InterceptionId);
+
+  if (successRate === null) {
+    return false;
+  }
+  console.log("Success rate: ", successRate);
+  return Math.random() * 100 < successRate;
 }

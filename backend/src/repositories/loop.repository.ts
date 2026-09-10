@@ -13,4 +13,4 @@
  *
  * See repositories/blue.repository.ts for the worked example.
  */
-export {};
+export {}
