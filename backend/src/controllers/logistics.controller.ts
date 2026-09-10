@@ -88,3 +88,7 @@ export async function getLauncherById(req: Request<{ id: string }>, res: Respons
   }
   res.json(launcher);
 }
+
+export async function getAllDeployments(_req: Request, res: Response): Promise<void> {
+  res.json(await logisticsService.getAllDeployments());
+}

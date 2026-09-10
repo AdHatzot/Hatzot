@@ -23,6 +23,7 @@ import {
 } from "../repositories/logistics.repository";
 import { LauncherType } from "../db/entities/launcherType.entity";
 import { InterceptorType } from "../db/entities/InterceptorType.entity";
+import { Deployment } from "../db/entities/deployment.entity";
 
 export async function getStatus(): Promise<{ team: Team; status: string }> {
   return { team: "logistics", status: "empty" };
@@ -151,4 +152,8 @@ export async function getLauncherById(launcherId: string | number) {
     },
     ammunitionAmount: Number(rawData.total_ammunition_quantity),
   };
+}
+
+export async function getAllDeployments(): Promise<Array<Deployment>> {
+  return await logisticsDeploymentRepository.find();
 }
