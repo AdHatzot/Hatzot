@@ -15,6 +15,10 @@ import {
   InterceptionResult,
   InterceptionStatus,
 } from "../db/entities/interception.entity";
+import { fireIntercept } from "../services/logistics.service";
+import { droneRepository } from "../repositories/red/drone.repository";
+import { logisticsLiveLauncherRepository } from "../repositories/logistics.repository";
+import { broadcast } from "../ws";
 
 // TODO: Un-comment once external API endpoint is available
 // async function fetchInterceptionData(drones_id: number[]) {
@@ -43,8 +47,25 @@ export async function createInterception(
 ): Promise<Interception[]> {
   // TODO: replace mockData(drones_id) with a real API call once the endpoint exists,
 
-  // TODO: medium-check if an active interception exists for the given drone_id and the result isnt final yet (if it is and you have a MISS then lanch again)
-  const interceptionData = mockData(drones_id);
+  // Filter out drones that already have an active IN_PROGRESS interception.
+  // Exception: if the last interception for a drone resulted in MISS, we re-launch.
+  const eligibleDroneIds = await Promise.all(
+    drones_id.map(async (droneId) => {
+      const latest = await interceptionsRepository.findOne({
+        where: { droneId },
+        order: { launchedAt: "DESC" },
+      });
+
+      if (!latest) return droneId; // no prior interception — always eligible
+      if (latest.status === InterceptionStatus.IN_PROGRESS) return null; // skip — already being intercepted
+      return null; // HIT, MISS, or ABORTED — skip
+    }),
+  );
+
+  const filteredDroneIds = eligibleDroneIds.filter((id): id is number => id !== null);
+  if (filteredDroneIds.length === 0) return [];
+
+  const interceptionData = mockData(filteredDroneIds);
 
   const saves: Partial<Interception>[] = interceptionData.map((data) => ({
     liveLauncherId: data.liveLauncherId,
@@ -73,7 +94,23 @@ export async function createInterception(
     durationMs: 1800,
   });*/
 
-  // TODO: after the animation remove from the DB connected to the project 1 of the spesific missles we used from the lancher we used
+  // Decrement 1 missile from the launcher that fired each interceptor.
+  await Promise.all(
+    saved.map(async (interception) => {
+      try {
+        await fireIntercept({
+          launcherId: interception.liveLauncherId,
+          interceptorTypeId: interception.interceptorTypeId,
+        });
+      } catch (err) {
+        console.warn(
+          `Could not decrement ammo for launcher ${interception.liveLauncherId}:`,
+          err,
+        );
+      }
+    }),
+  );
+
   const updated = await Promise.all(
     saved.map(async (interception) => {
       const didIntercept = await getDidIntercept(interception.id);
@@ -86,7 +123,48 @@ export async function createInterception(
       return interception;
     }),
   );
-  // TODO: delete drone using the red team function that deletes it incase of HIT only - incase of miss just finish the opeation without removing the drone
+
+  // Delete the drone from the red-team DB on HIT; leave it in place on MISS.
+  // Also broadcast a WS event so the frontend can run the animation.
+  await Promise.all(
+    updated.map(async (interception) => {
+      if (interception.result === InterceptionResult.HIT) {
+        try {
+          await droneRepository.delete({ droneId: String(interception.droneId) });
+        } catch (err) {
+          console.warn(`Could not delete drone ${interception.droneId} after HIT:`, err);
+        }
+      }
+
+      // Fetch launcher coords for the animation start point.
+      try {
+        const launcher = await logisticsLiveLauncherRepository.findOne({
+          where: { id: String(interception.liveLauncherId) },
+        });
+
+        const drone = await droneRepository.findOne({
+          where: { droneId: String(interception.droneId) },
+          relations: { position: true },
+        });
+
+        broadcast("loop:interception.fired", {
+          id: interception.id,
+          start: {
+            lat: launcher?.latitude ?? interception.interceptorLatitude ?? 0,
+            lng: launcher?.longitude ?? interception.interceptorLongitude ?? 0,
+          },
+          target: {
+            lat: drone?.position ? Number(drone.position.latitude) : 0,
+            lng: drone?.position ? Number(drone.position.longitude) : 0,
+          },
+          result: interception.result === InterceptionResult.HIT ? "hit" : "miss",
+          durationMs: 2000,
+        });
+      } catch (err) {
+        console.warn(`Could not broadcast interception ${interception.id}:`, err);
+      }
+    }),
+  );
 
   return await interceptionsRepository.save(updated);
 }

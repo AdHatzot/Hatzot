@@ -10,33 +10,38 @@ import type {
   Map as LeafletMap,
 } from "leaflet";
 
-import { ISRAEL_CENTER } from "@/shared/geo";
 import { animateInterception } from "./animateInterception";
+import type { Interception } from "@/types/interceptions";
+
+// Derive WS URL from the existing VITE_API_URL env var (declared in vite-env.d.ts).
+// e.g. "http://localhost:3000" → "ws://localhost:3000/ws"
+const WS_URL = import.meta.env.VITE_API_URL
+  ? import.meta.env.VITE_API_URL.replace(/^http/, "ws") + "/ws"
+  : `ws://${window.location.hostname}:3000/ws`;
 
 export function mountInterceptionLayer(
   group: LayerGroup,
   _map: LeafletMap,
 ): void {
+  const socket = new WebSocket(WS_URL);
 
-  const start = {
-    lat: ISRAEL_CENTER[0] - 0.25,
-    lng: ISRAEL_CENTER[1],
-  };
+  socket.addEventListener("message", (event: MessageEvent<string>) => {
+    try {
+      const msg = JSON.parse(event.data) as { name: string; payload: unknown };
 
-  const target = {
-    lat: ISRAEL_CENTER[0] + 0.25,
-    lng: ISRAEL_CENTER[1],
-  };
+      if (msg.name !== "loop:interception.fired") return;
 
-  animateInterception({
-    group,
+      const interception = msg.payload as Interception;
 
-    start,
-
-    target,
-
-    result: "hit",
-
-    durationMs: 1800,
+      animateInterception({
+        group,
+        start: interception.start,
+        target: interception.target,
+        result: interception.result,
+        durationMs: interception.durationMs,
+      });
+    } catch {
+      // ignore malformed messages
+    }
   });
 }
