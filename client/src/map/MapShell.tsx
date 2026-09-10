@@ -22,6 +22,7 @@ import { LayersPanel } from "./controls/LayersPanel";
 import { MapInfoBar } from "./MapInfoBar";
 
 const TILE_URL = import.meta.env.VITE_MAP_TILE_URL;
+const API_BASE_URL = "http://localhost:3000";
 
 export interface InfoBarItem {
   id: string;
@@ -94,6 +95,18 @@ export function MapShell({ visible }: { visible: boolean }): JSX.Element {
   useEffect(() => {
     if (visible && map) map.invalidateSize();
   }, [visible, map]);
+
+  useEffect(() => {
+    const loadData = async () => {
+      const response = await fetch(
+        `${API_BASE_URL}/api/logistics/launcher-data`,
+      );
+
+      console.log(response);
+    };
+
+    loadData();
+  }, []);
 
   return (
     <div className={`absolute inset-0 ${visible ? "" : "invisible"}`}>
