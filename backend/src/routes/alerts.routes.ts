@@ -11,16 +11,19 @@ import { Router } from "express";
 import * as alerts from "../controllers/alerts.controller";
 import { asyncHandler } from "../shared/asyncHandler";
 
+
 export const alertsRoutes: Router = Router();
 
 alertsRoutes.get("/", asyncHandler(alerts.getStatus));
 alertsRoutes.get("/status", asyncHandler(alerts.getAlertStatus));
 alertsRoutes.get("/cities", asyncHandler(alerts.getCityZones));
 alertsRoutes.post(
-    "/cities/intersections",
-    asyncHandler(alerts.getIntersectingCityZones),
+  "/cities/intersections",
+  asyncHandler(alerts.getIntersectingCityZones),
 );
 alertsRoutes.post(
-    "/cities/alertable",
-    asyncHandler(alerts.getAlertableCityZones),
+  "/cities/alertable",
+  asyncHandler(alerts.getAlertableCityZones),
 );
+
+

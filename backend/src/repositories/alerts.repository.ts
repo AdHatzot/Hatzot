@@ -20,6 +20,8 @@ export type AlertType = "siren" | "threatened";
 export type AlertStatus = {
 	type: AlertType;
 	cityId: number;
+	cityName?: string;
+	timestamp?: number;
 };
 
 const ALERT_KEY_PREFIXES: ReadonlyArray<{
@@ -45,15 +47,61 @@ const scanKeys = async (pattern: string): Promise<string[]> => {
 	return keys;
 };
 
+const getCityName = async (key: string): Promise<string | undefined> => {
+	const value = await redis.sendCommand(["JSON.GET", key, "$.cityName"]);
+	if (typeof value !== "string" || !value) {
+		return undefined;
+	}
+
+	try {
+		const parsed: unknown = JSON.parse(value);
+		return Array.isArray(parsed) && typeof parsed[0] === "string"
+			? parsed[0]
+			: undefined;
+	} catch {
+		return undefined;
+	}
+};
+
+const getAlertTimestamp = async (key: string): Promise<number | undefined> => {
+	const value = await redis.sendCommand(["JSON.GET", key, "$.timestamp"]);
+	if (typeof value !== "string" || !value) {
+		return undefined;
+	}
+
+	try {
+		const parsed: unknown = JSON.parse(value);
+		const timestamp = Array.isArray(parsed) ? parsed[0] : undefined;
+		return typeof timestamp === "number" && Number.isFinite(timestamp)
+			? timestamp
+			: undefined;
+	} catch {
+		return undefined;
+	}
+};
+
 export const getAlertStatus = async (): Promise<AlertStatus[]> => {
 	const statuses = await Promise.all(
 		ALERT_KEY_PREFIXES.map(async ({ type, prefix }) => {
 			const keys = await scanKeys(`${prefix}*`);
 
-			return keys.flatMap((key): AlertStatus[] => {
+			return Promise.all(keys.flatMap(async (key): Promise<AlertStatus[]> => {
 				const cityId = getCityIdFromKey(key, prefix);
-				return cityId === null ? [] : [{ type, cityId }];
-			});
+				if (cityId === null) {
+					return [];
+				}
+
+				const cityName = await getCityName(key);
+				const timestamp = await getAlertTimestamp(key);
+				return [
+					{
+						type,
+						cityId,
+						...(cityName ? { cityName } : {}),
+						...(timestamp !== undefined ? { timestamp } : {}),
+					},
+				];
+			})).then((entries) => entries.flat());
 		}),
 	);
 
