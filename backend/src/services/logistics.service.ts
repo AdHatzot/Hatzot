@@ -23,7 +23,7 @@ import {
 } from "../repositories/logistics.repository";
 import { LauncherType } from "../db/entities/launcherType.entity";
 import { InterceptorType } from "../db/entities/InterceptorType.entity";
-import { Deployment, DeploymentDto } from "../db/entities/deployment.entity";
+import { Deployment, DeploymentDto, DeploymentStatus } from "../db/entities/deployment.entity";
 
 export async function getStatus(): Promise<{ team: Team; status: string }> {
   return { team: "logistics", status: "empty" };
@@ -208,4 +208,28 @@ export async function createDeployment(data: DeploymentDto): Promise<Deployment>
 
   // Save/Insert into database
   return await logisticsDeploymentRepository.save(newDeployment);
+}
+
+export async function updateDeploymentStatus(
+  id: number,
+  newStatus: DeploymentStatus
+): Promise<Deployment> {
+  // 1. Check if target deployment exists
+  const targetDeployment = await logisticsDeploymentRepository.findOne({ where: { id } });
+
+  if (!targetDeployment) {
+    throw new Error(`NOT_FOUND: Deployment with ID ${id} does not exist`);
+  }
+
+  // 2. Demote existing LIVE deployment if target is becoming LIVE
+  if (newStatus === DeploymentStatus.REAL) {
+    await logisticsDeploymentRepository.update(
+      { status: DeploymentStatus.REAL },
+      { status: DeploymentStatus.SAVED }
+    );
+  }
+
+  // 3. Save updated status
+  targetDeployment.status = newStatus;
+  return await logisticsDeploymentRepository.save(targetDeployment);
 }

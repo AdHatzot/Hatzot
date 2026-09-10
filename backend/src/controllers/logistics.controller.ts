@@ -145,3 +145,37 @@ export async function createDeployment(req: Request, res: Response): Promise<voi
     res.status(500).json({ message: "Error creating deployment", error });
   }
 }
+
+export async function updateDeploymentStatusController(
+  req: Request,
+  res: Response
+): Promise<void> {
+  try {
+    const { id, status } = req.body;
+    const deploymentId = Number(id);
+
+    // Validate ID
+    if (!Number.isInteger(deploymentId) || deploymentId < 1) {
+      res.status(400).json({ error: "deployment id must be a positive integer" });
+      return;
+    }
+
+    // Validate Status
+    if (!status || !Object.values(DeploymentStatus).includes(status)) {
+      res.status(400).json({
+        error: `status is required and must be one of: ${Object.values(DeploymentStatus).join(", ")}`,
+      });
+      return;
+    }
+
+    const updatedDeployment = await logisticsService.updateDeploymentStatus(deploymentId, status as DeploymentStatus);
+    res.json(updatedDeployment);
+
+  } catch (error: any) {
+    if (error.message?.startsWith("NOT_FOUND")) {
+      res.status(404).json({ error: error.message.replace("NOT_FOUND: ", "") });
+      return;
+    }
+    res.status(500).json({ message: "Error updating deployment status", error: error.message });
+  }
+}

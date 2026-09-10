@@ -44,3 +44,7 @@ logisticsRoutes.post(
   "/deployments",
   asyncHandler(logistics.createDeployment),
 );
+logisticsRoutes.patch(
+  "/deployments",
+  asyncHandler(logistics.updateDeploymentStatusController),
+);
