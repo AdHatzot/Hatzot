@@ -14,16 +14,16 @@ import { HttpError } from "../shared/httpError";
 export const getAllLaunchers = async (
   _req: Request,
   res: Response,
-) => {
+): Promise<void> => {
   const launchers = await logisticsService.getAllLaunchers();
 
   res.status(200).json(launchers);
-}
+};
 
 export const getLauncherById = async (
   req: Request,
   res: Response,
-) => {
+): Promise<void> => {
   const launcher = await logisticsService.getLauncherById(
     req.params.id,
   );
@@ -36,7 +36,7 @@ export const getLauncherById = async (
   }
 
   res.status(200).json(launcher);
-}
+};
 
 export async function getStatus(_req: Request, res: Response): Promise<void> {
   res.json(await logisticsService.getStatus());
@@ -117,3 +117,67 @@ export async function getAllInterceptorTypes(
 ): Promise<void> {
   res.json(await logisticsService.getAllInterceptorTypes());
 }
+
+export async function createDeployment(
+  req: Request,
+  res: Response,
+): Promise<void> {
+  const body = req.body as {
+    name?: unknown;
+    rows?: unknown;
+  };
+
+  if (typeof body?.name !== "string" || body.name.trim().length === 0) {
+    throw new HttpError(400, "name must be a non-empty string");
+  }
+
+  if (!Array.isArray(body?.rows) || body.rows.length === 0) {
+    throw new HttpError(400, "rows must be a non-empty array");
+  }
+
+  const parsedRows = body.rows.map((row: Record<string, unknown>, index: number) => {
+    const launcherTypeName = row?.launcher_type_name;
+    const longitude = Number(row?.longitude);
+    const latitude = Number(row?.latitude);
+    const asl = Number(row?.asl);
+    const agl = Number(row?.agl);
+    const amount = Number(row?.amount);
+
+    if (typeof launcherTypeName !== "string" || launcherTypeName.trim().length === 0) {
+      throw new HttpError(400, `Row ${index + 1}: launcher_type_name is required`);
+    }
+    if (!Number.isFinite(longitude)) {
+      throw new HttpError(400, `Row ${index + 1}: longitude must be a valid number`);
+    }
+    if (!Number.isFinite(latitude)) {
+      throw new HttpError(400, `Row ${index + 1}: latitude must be a valid number`);
+    }
+    if (!Number.isFinite(asl)) {
+      throw new HttpError(400, `Row ${index + 1}: asl must be a valid number`);
+    }
+    if (!Number.isFinite(agl)) {
+      throw new HttpError(400, `Row ${index + 1}: agl must be a valid number`);
+    }
+    if (!Number.isFinite(amount) || !Number.isInteger(amount) || amount < 0) {
+      throw new HttpError(400, `Row ${index + 1}: amount must be a non-negative integer`);
+    }
+
+    return {
+      launcher_type_name: launcherTypeName.trim(),
+      longitude,
+      latitude,
+      asl,
+      agl,
+      amount,
+    };
+  });
+
+  const result = await logisticsService.createDeployment({
+    name: body.name.trim(),
+    rows: parsedRows,
+  });
+
+  res.status(201).json(result);
+}
+
+export const deployment = createDeployment;

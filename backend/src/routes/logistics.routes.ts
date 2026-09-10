@@ -28,5 +28,13 @@ logisticsRoutes.get(
   "/interceptor-types",
   asyncHandler(logistics.getAllInterceptorTypes),
 );
-logisticsRoutes.get("/launcher-data", logistics.getAllLaunchers);
-logisticsRoutes.get("/launchers/:id", logistics.getLauncherById);
+logisticsRoutes.post(
+  "/deployment",
+  asyncHandler(logistics.createDeployment),
+);
+logisticsRoutes.post(
+  "/deployments",
+  asyncHandler(logistics.createDeployment),
+);
+logisticsRoutes.get("/launcher-data", asyncHandler(logistics.getAllLaunchers));
+logisticsRoutes.get("/launchers/:id", asyncHandler(logistics.getLauncherById));

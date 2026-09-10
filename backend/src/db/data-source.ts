@@ -29,7 +29,7 @@
 import { DataSource } from "typeorm";
 import config from "../config";
 import { Deployment } from "./entities/deployment.entity";
-import { InterceptorType } from "./entities/InterceptorType.entity";
+import { InterceptorType } from "./entities/interceptorType.entity";
 import { LauncherAmmunition } from "./entities/launcherAmmunition.entity";
 import { LauncherType } from "./entities/launcherType.entity";
 import { LiveLauncher } from "./entities/liveLauncher.entity";

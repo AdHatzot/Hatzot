@@ -31,16 +31,14 @@ export function AlertsPanel(): JSX.Element {
   useEffect(
     () =>
       subscribeRedDrones((ticks) => {
-        setDrones(
-          ticks.map(toDrone).sort((a, b) => a.id.localeCompare(b.id)),
-        );
+        setDrones(ticks.map(toDrone).sort((a, b) => a.id.localeCompare(b.id)));
       }),
     [],
   );
 
   return (
     <section data-testid="alerts-panel" className="flex h-full flex-col">
-      <div className="mt-4 flex overflow-hidden rounded border border-line">
+      <div className="mt-4 flex rounded border border-line">
         <button
           className={`flex-1 border-l border-line py-2 text-sm font-medium text-text ${isActiveTab ? "bg-panel-2" : ""}`}
           onClick={() => setIsActiveTab(true)}
@@ -64,7 +62,7 @@ export function AlertsPanel(): JSX.Element {
             </span>
             <button
               className="flex items-center gap-1.5 text-sm font-medium text-red-400"
-              onClick={() => alert("shoot all :)")}
+              onClick={() => alert("חבל שאין קוד כאן :(")}
             >
               <CrosshairIcon className="h-4 w-4" />
               יירט הכל

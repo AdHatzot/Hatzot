@@ -33,7 +33,7 @@ export function DroneRow({ drone }: { drone: Drone }): JSX.Element {
 
       <button
         className="flex items-center gap-1.5 text-xs text-text-dim hover:text-text"
-        onClick={() => alert("shot one")}
+        onClick={() => alert("צריך לכתוב קוד כדי שזה יעבוד :(")}
       >
         <CrosshairIcon className="h-3.5 w-3.5" />
         יירט
