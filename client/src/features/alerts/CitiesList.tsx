@@ -186,7 +186,9 @@ export function CitiesList(): JSX.Element {
                     </span>
                     {minutesSinceAlert !== null && (
                       <span className="text-[11px] text-text-dim">
-                        לפני {minutesSinceAlert} דקות
+                        {minutesSinceAlert === 0
+                          ? "עכשיו"
+                          : `לפני ${minutesSinceAlert} דקות`}
                       </span>
                     )}
                   </div>
