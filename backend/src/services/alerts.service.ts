@@ -10,9 +10,8 @@
  */
 import type { Team } from "../types";
 import type { Location } from "../types";
-import type { CurrentDrone } from "../db/entities/drone.entity";
 import { createClient, type RedisClientType } from "redis";
-import { findCurrentDrones } from "../repositories/drones.repository";
+import { getDrones } from "./drones.service";
 import { readFile } from "fs/promises";
 import booleanIntersects from "@turf/boolean-intersects";
 import booleanPointInPolygon from "@turf/boolean-point-in-polygon";
@@ -29,9 +28,14 @@ import type {
     MultiPolygon,
     Polygon,
 } from "geojson";
+import path from "path";
+
+const CITIES_GEOJSON_PATH =
+    process.env.CITIES_GEOJSON ??
+    path.join(process.cwd(), "src", "db", "assets", "cities", "CITIES.geojson");
 
 const INFINITE_LINE_DISTANCE_KILOMETERS = 20_040;
-const REDIS_ALERT_KEY_PREFIX = "Alert:";
+const REDIS_ALERT_KEY_PREFIX = "siren";
 
 let redisClient: RedisClientType | null = null;
 let redisConnection: Promise<RedisClientType> | null = null;
@@ -60,26 +64,22 @@ export async function getStatus(): Promise<{ team: Team; status: "empty" }> {
 }
 
 export async function getCityZones(
-    geojson: string,
+    geojson: string = CITIES_GEOJSON_PATH,
 ): Promise<FeatureCollection<Geometry, GeoJsonProperties>> {
     const raw = await readFile(geojson, "utf-8");
     return JSON.parse(raw) as FeatureCollection<Geometry, GeoJsonProperties>;
 }
 
-export async function getDrones(): Promise<CurrentDrone[]> {
-    return findCurrentDrones();
-}
 
-export async function cacheDroneAlerts(geojson: string): Promise<void> {
+export async function cacheDroneAlerts(): Promise<void> {
     const [cityZones, drones] = await Promise.all([
-        getCityZones(geojson),
+        getCityZones(),
         getDrones(),
     ]);
     const polygons = cityZones.features as Feature<
         Polygon,
         GeoJsonProperties
     >[];
-    const alerts = new Map<string, number>();
 
     for (const drone of drones) {
         const intersecting = getIntersectingCityZones(
@@ -105,22 +105,14 @@ export async function cacheDroneAlerts(geojson: string): Promise<void> {
                 );
             }
 
-            const key = String(cityId);
-            const existing = alerts.get(key);
-            if (existing === undefined || ttl > existing) alerts.set(key, ttl);
+            const redis = await getRedisClient();
+
+            redis.set(`${REDIS_ALERT_KEY_PREFIX}:${cityId}`, cityId, {
+                EX: ttl,
+                NX: true,
+            });
         }
     }
-
-    const redis = await getRedisClient();
-    await Promise.all(
-        [...alerts.entries()]
-            .filter(([, ttl]) => ttl > 0)
-            .map(([cityId, ttl]) =>
-                redis.set(`${REDIS_ALERT_KEY_PREFIX}${cityId}`, cityId, {
-                    EX: Math.ceil(ttl),
-                }),
-            ),
-    );
 }
 
 export function getIntersectingCityZones(
@@ -197,4 +189,14 @@ export function getAlertableCityZones(
 
         return secondsUntilIntersection <= ttl;
     });
+}
+
+const DRONE_ALERTS_INTERVAL_MS = 2_000;
+
+export function startDroneAlertsTicker(): void {
+    setInterval(() => {
+        cacheDroneAlerts().catch((err: unknown) =>
+            console.error("drone alerts ticker", err),
+        );
+    }, DRONE_ALERTS_INTERVAL_MS);
 }
