@@ -40,12 +40,16 @@ export async function fireIntercept(
     );
   }
 
-  res.json(
-    await logisticsService.fireIntercept({
-      launcherId,
-      interceptorTypeId,
-    }),
-  );
+  const result = await logisticsService.fireIntercept({
+    launcherId,
+    interceptorTypeId,
+  });
+
+  res
+    .type("text/plain")
+    .send(
+      `Interceptor ${result.interceptorTypeId} in launcher ${result.launcherId} was fired successfully.`,
+    );
 }
 
 export async function getAll(_req: Request, res: Response): Promise<void> {
@@ -60,7 +64,9 @@ export async function getLiveDeployments(
     const deploymentId = req.query.id !== undefined ? Number(req.query.id) : 1;
 
     if (!Number.isInteger(deploymentId) || deploymentId < 1) {
-      res.status(400).json({ error: "deployment id must be a positive integer" });
+      res
+        .status(400)
+        .json({ error: "deployment id must be a positive integer" });
       return;
     }
 
@@ -71,10 +77,16 @@ export async function getLiveDeployments(
   }
 }
 
-export async function getAllLauncherTypes(_req: Request, res: Response): Promise<void> {
+export async function getAllLauncherTypes(
+  _req: Request,
+  res: Response,
+): Promise<void> {
   res.json(await logisticsService.getAllLauncherTypes());
 }
 
-export async function getAllInterceptorTypes(_req: Request, res: Response): Promise<void> {
+export async function getAllInterceptorTypes(
+  _req: Request,
+  res: Response,
+): Promise<void> {
   res.json(await logisticsService.getAllInterceptorTypes());
 }

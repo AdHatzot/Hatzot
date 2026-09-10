@@ -53,7 +53,7 @@ export async function getAll() {
 }
 
 export async function getLiveDeployments(
-  deploymentId?: number
+  deploymentId?: number,
 ): Promise<
   Array<{
     deployment: unknown;
@@ -98,7 +98,9 @@ export async function getLiveDeployments(
       asl: entity.asl,
       agl: entity.agl,
     },
-    ammunitionAmount: Number(results.raw[index].total_ammunition_quantity),
+    ammunitionAmount: Number(
+      results.raw[index]?.total_ammunition_quantity ?? 0,
+    ),
   }));
 }
 
