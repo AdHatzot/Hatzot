@@ -17,12 +17,12 @@ export const getAllLaunchers = async (req: Request<{ id: string }>, res: Respons
   const launchers = await logisticsService.getAllLaunchers(deploymentId);
 
   res.status(200).json(launchers);
-}
+};
 
 export const getLauncherById = async (
   req: Request,
   res: Response,
-) => {
+): Promise<void> => {
   const launcher = await logisticsService.getLauncherById(
     req.params.id,
   );
@@ -35,7 +35,7 @@ export const getLauncherById = async (
   }
 
   res.status(200).json(launcher);
-}
+};
 
 export async function getStatus(_req: Request, res: Response): Promise<void> {
   res.json(await logisticsService.getStatus());
@@ -133,36 +133,6 @@ export async function getDeploymentById(req: Request, res: Response): Promise<vo
   }
 }
 
-export async function createDeployment(req: Request, res: Response): Promise<void> {
-  try {
-    const { name, status } = req.body;
-
-    // 1. Validate required fields
-    if (!name || typeof name !== "string" || name.trim() === "") {
-      res.status(400).json({ error: "name is required and must be a non-empty string" });
-      return;
-    }
-
-    if (!status || !Object.values(DeploymentStatus).includes(status)) {
-      res.status(400).json({
-        error: `status is required and must be one of: ${Object.values(DeploymentStatus).join(", ")}`,
-      });
-      return;
-    }
-
-    // 2. Insert into DB via service
-    const createdDeployment = await logisticsService.createDeployment({
-      name: name.trim(),
-      status: status as DeploymentStatus,
-    });
-
-    // 3. Return 201 Created with the new deployment
-    res.status(201).json(createdDeployment);
-  } catch (error) {
-    res.status(500).json({ message: "Error creating deployment", error });
-  }
-}
-
 export async function updateDeploymentStatusController(
   req: Request,
   res: Response
@@ -211,3 +181,67 @@ export async function getRealDeployment(_req: Request, res: Response): Promise<v
     res.status(500).json({ message: "Error fetching real deployment", error: error.message });
   }
 }
+
+export async function createDeployment(
+  req: Request,
+  res: Response,
+): Promise<void> {
+  const body = req.body as {
+    name?: unknown;
+    rows?: unknown;
+  };
+
+  if (typeof body?.name !== "string" || body.name.trim().length === 0) {
+    throw new HttpError(400, "name must be a non-empty string");
+  }
+
+  if (!Array.isArray(body?.rows) || body.rows.length === 0) {
+    throw new HttpError(400, "rows must be a non-empty array");
+  }
+
+  const parsedRows = body.rows.map((row: Record<string, unknown>, index: number) => {
+    const launcherTypeName = row?.launcher_type_name;
+    const longitude = Number(row?.longitude);
+    const latitude = Number(row?.latitude);
+    const asl = Number(row?.asl);
+    const agl = Number(row?.agl);
+    const amount = Number(row?.amount);
+
+    if (typeof launcherTypeName !== "string" || launcherTypeName.trim().length === 0) {
+      throw new HttpError(400, `Row ${index + 1}: launcher_type_name is required`);
+    }
+    if (!Number.isFinite(longitude)) {
+      throw new HttpError(400, `Row ${index + 1}: longitude must be a valid number`);
+    }
+    if (!Number.isFinite(latitude)) {
+      throw new HttpError(400, `Row ${index + 1}: latitude must be a valid number`);
+    }
+    if (!Number.isFinite(asl)) {
+      throw new HttpError(400, `Row ${index + 1}: asl must be a valid number`);
+    }
+    if (!Number.isFinite(agl)) {
+      throw new HttpError(400, `Row ${index + 1}: agl must be a valid number`);
+    }
+    if (!Number.isFinite(amount) || !Number.isInteger(amount) || amount < 0) {
+      throw new HttpError(400, `Row ${index + 1}: amount must be a non-negative integer`);
+    }
+
+    return {
+      launcher_type_name: launcherTypeName.trim(),
+      longitude,
+      latitude,
+      asl,
+      agl,
+      amount,
+    };
+  });
+
+  const result = await logisticsService.createDeployment({
+    name: body.name.trim(),
+    rows: parsedRows,
+  });
+
+  res.status(201).json(result);
+}
+
+export const deployment = createDeployment;

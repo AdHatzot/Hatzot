@@ -11,7 +11,9 @@
 import type { Team } from "../types";
 import {
   fireIntercept as fireInterceptInRepository,
+  createDeployment as createDeploymentInRepository,
   type FireInterceptRequest,
+  type CreateDeploymentRequest,
 } from "../repositories/logistics.repository";
 import { dataSource } from "../db/data-source";
 import { LiveLauncher } from "../db/entities/liveLauncher.entity";
@@ -19,11 +21,11 @@ import {
   logisticsDeploymentRepository,
   logisticsLiveLauncherRepository,
   logisticsLauncherTypeRepository,
-  logisticsInterceptorTypeRepository
+  logisticsInterceptorTypeRepository,
 } from "../repositories/logistics.repository";
 import { LauncherType } from "../db/entities/launcherType.entity";
 import { InterceptorType } from "../db/entities/InterceptorType.entity";
-import { Deployment, DeploymentDto, DeploymentStatus } from "../db/entities/deployment.entity";
+import { Deployment, DeploymentStatus } from "../db/entities/deployment.entity";
 import { LauncherData } from "../utils/LiveLauncherTypes";
 import * as logisticsRepository from "../repositories/logistics.repository";
 
@@ -104,16 +106,6 @@ export async function getDeploymentById(deploymentId: number) {
   };
 }
 
-export async function createDeployment(data: DeploymentDto): Promise<Deployment> {
-  // Create an entity instance
-  const newDeployment = logisticsDeploymentRepository.create({
-    name: data.name,
-    status: data.status,
-  });
-
-  // Save/Insert into database
-  return await logisticsDeploymentRepository.save(newDeployment);
-}
 
 export async function updateDeploymentStatus(
   id: number,
@@ -203,6 +195,10 @@ const mapLiveLauncher = (launcher: LiveLauncher) => {
     })),
   };
 }
+export async function createDeployment(request: CreateDeploymentRequest) {
+  return await createDeploymentInRepository(request);
+}
+
 const mapLauncher = (launcher: LiveLauncher): LauncherData => {
   return {
     id: launcher.id,
@@ -241,7 +237,7 @@ export const getAllLaunchers = async (deploymentId: number): Promise<LauncherDat
 export const getLauncherById = async (id: string): Promise<LauncherData | null> => {
   const launcher = await logisticsRepository.getLauncherFromDb(id);
 
-  if(!launcher) {
+  if (!launcher) {
     return null;
   }
 

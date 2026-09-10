@@ -2,7 +2,6 @@ import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from "typeorm";
 import { LiveLauncher } from "./liveLauncher.entity";
 
 export enum DeploymentStatus {
-  // Add your custom enum values here as defined in hatzot.deployment_status
   REAL = "Real",
   SAVED = "Saved",
   DRAFT = "Draft"
