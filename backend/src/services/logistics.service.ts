@@ -1,0 +1,153 @@
+/**
+ * @team     logistics
+ * @owner    logistics-lead
+ * @public   yes
+ * @updated  2026-09-09
+ *
+ * Intentionally empty — business logic lands here with the feed. Persistence
+ * goes through repositories/logistics.repository.ts only; live changes go out
+ * via broadcast() from ../ws. No Express types in here.
+ */
+import type { Team } from "../types";
+import {
+  fireIntercept as fireInterceptInRepository,
+  createDeployment as createDeploymentInRepository,
+  type FireInterceptRequest,
+  type CreateDeploymentRequest,
+} from "../repositories/logistics.repository";
+import { dataSource } from "../db/data-source";
+import { LiveLauncher } from "../db/entities/liveLauncher.entity";
+import {
+  logisticsDeploymentRepository,
+  logisticsLiveLauncherRepository,
+  logisticsLauncherTypeRepository,
+  logisticsInterceptorTypeRepository,
+} from "../repositories/logistics.repository";
+import { LauncherType } from "../db/entities/launcherType.entity";
+import { InterceptorType } from "../db/entities/InterceptorType.entity";
+import { LauncherData } from "../utils/LiveLauncherTypes";
+import * as logisticsRepository from "../repositories/logistics.repository";
+
+export async function getStatus(): Promise<{ team: Team; status: string }> {
+  return { team: "logistics", status: "empty" };
+}
+
+export async function fireIntercept(
+  request: FireInterceptRequest,
+): Promise<{ launcherId: number; interceptorTypeId: number }> {
+  const result = await fireInterceptInRepository(request);
+
+  setTimeout(() => {
+    void dataSource
+      .getRepository(LiveLauncher)
+      .update({ id: String(result.launcherId) }, { active: true })
+      .catch((error: unknown) => {
+        console.error("Failed to reactivate launcher", error);
+      });
+  }, result.reloadTimeS * 1000);
+
+  return {
+    launcherId: Number(result.launcherId),
+    interceptorTypeId: result.interceptorTypeId,
+  };
+}
+
+export async function getAll() {
+  return await logisticsDeploymentRepository.find();
+}
+
+export async function getLiveDeployments(
+  deploymentId?: number,
+): Promise<
+  Array<{
+    deployment: unknown;
+    launcherId: string;
+    location: {
+      latitude: number | null;
+      longitude: number | null;
+      asl: number | null;
+      agl: number | null;
+    };
+    ammunitionAmount: number;
+  }>
+> {
+  const targetDeploymentId = deploymentId ?? 1;
+
+  const results = await logisticsLiveLauncherRepository
+    .createQueryBuilder("launcher")
+    .innerJoinAndSelect("launcher.deployment", "deployment")
+    .leftJoin("launcher.launcherAmmunitions", "ammunition")
+    .where("deployment.id = :deploymentId", { deploymentId: targetDeploymentId })
+    .select([
+      "deployment.id",
+      "deployment.name",
+      "deployment.status",
+      "launcher.id",
+      "launcher.latitude",
+      "launcher.longitude",
+      "launcher.asl",
+      "launcher.agl",
+      "COALESCE(SUM(ammunition.quantity), 0) AS total_ammunition_quantity",
+    ])
+    .groupBy("launcher.id")
+    .addGroupBy("deployment.id")
+    .getRawAndEntities();
+
+  return results.entities.map((entity, index) => ({
+    deployment: entity.deployment,
+    launcherId: entity.id,
+    location: {
+      latitude: entity.latitude,
+      longitude: entity.longitude,
+      asl: entity.asl,
+      agl: entity.agl,
+    },
+    ammunitionAmount: Number(
+      results.raw[index]?.total_ammunition_quantity ?? 0,
+    ),
+  }));
+}
+
+export async function getAllLauncherTypes(): Promise<Array<LauncherType>> {
+  return await logisticsLauncherTypeRepository.find();
+}
+
+export async function getAllInterceptorTypes(): Promise<Array<InterceptorType>> {
+  return await logisticsInterceptorTypeRepository.find();
+}
+
+export async function createDeployment(request: CreateDeploymentRequest) {
+  return await createDeploymentInRepository(request);
+}
+
+const mapLauncher = (launcher: LiveLauncher): LauncherData => {
+  return {
+    id: launcher.id,
+    name: launcher.launcherType.name,
+    location: {
+      lat: launcher.latitude,
+      long: launcher.longitude,
+    },
+    range: launcher.launcherType.rangeM,
+    interceptors: launcher.launcherAmmunitions.map((ammunition) => ({
+      name: ammunition.interceptorType.name,
+      amount: ammunition.quantity,
+    })),
+  };
+};
+
+export const getAllLaunchers = async (): Promise<LauncherData[]> => {
+  const launchers = await logisticsRepository.getLunchersFromDb();
+
+  return launchers.map(mapLauncher);
+};
+
+export const getLauncherById = async (id: string): Promise<LauncherData | null> => {
+  const launcher = await logisticsRepository.getLauncherFromDb(id);
+
+  if (!launcher) {
+    return null;
+  }
+
+  return mapLauncher(launcher);
+};

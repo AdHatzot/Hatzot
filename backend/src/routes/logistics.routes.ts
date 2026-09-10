@@ -32,3 +32,5 @@ logisticsRoutes.post(
   "/deployments",
   asyncHandler(logistics.createDeployment),
 );
+logisticsRoutes.get("/launcher-data", asyncHandler(logistics.getAllLaunchers));
+logisticsRoutes.get("/launchers/:id", asyncHandler(logistics.getLauncherById));
