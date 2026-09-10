@@ -1,10 +1,12 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { NewDeploymentModal } from "./NewDeploymentModal";
 import type { NewDeployment } from "./types";
 
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 
 export function NewDeploymentButton(): JSX.Element {
+  const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
@@ -36,7 +38,16 @@ export function NewDeploymentButton(): JSX.Element {
       const result = await response.json();
       console.log("Deployment created:", result);
 
+      // Close modal and navigate to verification page
       setIsModalOpen(false);
+      navigate(`/logistics/deployment/${result.id}`, {
+        state: {
+          deploymentId: result.id,
+          deploymentName: deployment.name,
+          rows: deployment.rows,
+          fileName: deployment.file.name,
+        },
+      });
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "שגיאה לא צפויה";
@@ -90,4 +101,4 @@ export function NewDeploymentButton(): JSX.Element {
       )}
     </>
   );
-}
+}
