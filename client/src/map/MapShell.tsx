@@ -5,6 +5,12 @@
  * @updated  2026-09-08
  *
  */
+
+import BlueMarker from "../../public/icons/blue-marker.svg";
+import CloudFence from "../../public/icons/CloudFence-Area.svg";
+import HorizonEye from "../../public/icons/HorizonEye-MX.svg";
+import IronHook from "../../public/icons/IronHook-SR.svg";
+
 import "leaflet/dist/leaflet.css";
 import { useEffect, useRef, useState } from "react";
 import L, { type Map as LeafletMap } from "leaflet";
@@ -14,7 +20,6 @@ import { useTeamLayers } from "./useTeamLayers";
 import { LayersButton } from "./controls/LayersButton";
 import { LayersPanel } from "./controls/LayersPanel";
 import { MapInfoBar } from "./MapInfoBar";
-import { Diamond, ChevronsUp, Triangle, Hexagon } from "lucide-react";
 
 const TILE_URL = import.meta.env.VITE_MAP_TILE_URL;
 
@@ -31,25 +36,25 @@ const DEMO_ITEMS: InfoBarItem[] = [
     id: "i1",
     label: "ShieldNest-Lite",
     count: 18,
-    icon: <Diamond className="h-4 w-4 text-sky-400" />,
+    icon: <img src={BlueMarker} alt="Blue Marker" width="30px" height="30px" />,
   },
   {
     id: "i2",
     label: "IronHook-SR",
     count: 14,
-    icon: <ChevronsUp className="h-4 w-4 text-orange-400" />,
+    icon: <img src={IronHook} alt="Blue Marker" width="25px" height="25px" />,
   },
   {
     id: "i3",
     label: "HorizonEye-MX",
     count: 12,
-    icon: <Triangle className="h-4 w-4 text-emerald-400" />,
+    icon: <img src={HorizonEye} alt="Blue Marker" width="25px" height="25px" />,
   },
   {
     id: "i4",
     label: "CloudFence-Area",
     count: 12,
-    icon: <Hexagon className="h-4 w-4 text-violet-400" />,
+    icon: <img src={CloudFence} alt="Blue Marker" width="25px" height="25px" />,
   },
 ];
 

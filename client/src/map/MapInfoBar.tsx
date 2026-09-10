@@ -8,7 +8,7 @@ export function MapInfoBar({
   return (
     <div
       data-testid="map-info-bar"
-      className="absolute bottom-10 left-1/2 z-[1000] flex -translate-x-1/2 items-center gap-5 rounded border border-line bg-panel/95 px-10 py-4 shadow rounded"
+      className="absolute bottom-10 left-1/2 z-[1000] flex -translate-x-1/2 items-center gap-10 rounded border border-line bg-panel/95 px-10 py-4 shadow rounded"
     >
       {infoItems.map((item) => (
         <div key={item.id} className="flex items-center gap-2">
@@ -18,7 +18,7 @@ export function MapInfoBar({
             </span>
             <span className="text-s font-semibold text-text">{item.count}</span>
           </div>
-          <div className="h1">{item.icon}</div>
+          {item.icon}
         </div>
       ))}
     </div>
