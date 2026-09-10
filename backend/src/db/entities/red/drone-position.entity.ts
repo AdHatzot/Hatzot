@@ -19,9 +19,6 @@ export class DronePosition implements Identifiable {
   @PrimaryGeneratedColumn({ type: "bigint" })
   id!: number;
 
-  @Column({ type: "bigint" })
-  droneId!: string;
-
   @OneToOne(() => Drone, (drone) => drone.position)
   @JoinColumn({ name: "drone_id" })
   drone!: Drone;
@@ -38,6 +35,6 @@ export class DronePosition implements Identifiable {
   @Column({ type: "numeric" })
   agl!: string;
 
-  @Column({ type: "timestamptz" })
+  @Column({ type: "timestamptz", name: "recorded_at" })
   recordedAt!: Date;
 }

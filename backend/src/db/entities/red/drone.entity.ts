@@ -25,7 +25,7 @@ export class Drone implements Identifiable {
   droneId!: string;
 
   @ManyToOne(() => DroneType, { nullable: false })
-  @JoinColumn({ name: "drone_type" })
+  @JoinColumn({ name: "drone_type_id" })
   droneType!: DroneType;
 
   @OneToOne(() => DronePosition, (position) => position.drone, {
