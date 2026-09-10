@@ -78,3 +78,13 @@ export async function getAllLauncherTypes(_req: Request, res: Response): Promise
 export async function getAllInterceptorTypes(_req: Request, res: Response): Promise<void> {
   res.json(await logisticsService.getAllInterceptorTypes());
 }
+
+export async function getLauncherById(req: Request<{ id: string }>, res: Response): Promise<void> {
+  const launcherId = req.query.id !== undefined ? Number(req.query.id) : 1;
+  const launcher = await logisticsService.getLauncherById(launcherId);
+  if (!launcher) {
+    res.status(404).json({ error: "Launcher not found" });
+    return;
+  }
+  res.json(launcher);
+}

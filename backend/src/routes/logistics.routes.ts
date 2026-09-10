@@ -28,3 +28,7 @@ logisticsRoutes.get(
   "/interceptor-types",
   asyncHandler(logistics.getAllInterceptorTypes),
 );
+logisticsRoutes.get(
+    "/launcher",
+    asyncHandler(logistics.getLauncherById),
+);

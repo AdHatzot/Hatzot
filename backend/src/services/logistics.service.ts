@@ -109,3 +109,46 @@ export async function getAllLauncherTypes(): Promise<Array<LauncherType>> {
 export async function getAllInterceptorTypes(): Promise<Array<InterceptorType>> {
   return await logisticsInterceptorTypeRepository.find();
 }
+
+export async function getLauncherById(launcherId: string | number) {
+  const targetlauncherId = launcherId ?? 1;
+
+  const result = await logisticsLiveLauncherRepository
+    .createQueryBuilder("launcher")
+    .innerJoinAndSelect("launcher.deployment", "deployment")
+    .leftJoin("launcher.launcherAmmunitions", "ammunition")
+    .where("launcher.id = :targetlauncherId", { targetlauncherId })
+    .select([
+      "deployment.id",
+      "deployment.name",
+      "deployment.status",
+      "launcher.id",
+      "launcher.latitude",
+      "launcher.longitude",
+      "launcher.asl",
+      "launcher.agl",
+      "COALESCE(SUM(ammunition.quantity), 0) AS total_ammunition_quantity",
+    ])
+    .groupBy("launcher.id")
+    .addGroupBy("deployment.id")
+    .getRawAndEntities();
+
+  if (!result.entities.length) {
+    return null;
+  }
+
+  const entity = result.entities[0];
+  const rawData = result.raw[0];
+
+  return {
+    launcherId: entity.id,
+    deployment: entity.deployment,
+    location: {
+      latitude: entity.latitude,
+      longitude: entity.longitude,
+      asl: entity.asl,
+      agl: entity.agl,
+    },
+    ammunitionAmount: Number(rawData.total_ammunition_quantity),
+  };
+}
