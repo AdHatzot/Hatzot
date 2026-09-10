@@ -13,7 +13,11 @@
     "@turf/turf": "^7.4.0",
     "cors": "^2.8.5",
     "express": "^4.21.2",
+    "pg": "^8.23.0",
+    "redis": "^6.2.1",
+    "reflect-metadata": "^0.2.2",
     "shapefile": "^0.6.6",
+    "typeorm": "^1.1.1",
     "ws": "^8.18.0"
   },
   "devDependencies": {
