@@ -21,6 +21,7 @@ import { logisticsRoutes } from "./routes/logistics.routes";
 import { loopRoutes } from "./routes/loop.routes";
 import { startBlueReloadTicker } from "./services/blue.service";
 import { errorHandler } from "./shared/errorHandler";
+import { startRedFetchDronesJob } from "./services/red.service";
 
 const PORT = Number(process.env.PORT ?? 3000);
 const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN ?? "http://localhost:5173";
@@ -47,6 +48,7 @@ async function main(): Promise<void> {
   const server = createServer(app);
   attachHub(server);
   startBlueReloadTicker();
+  startRedFetchDronesJob();
   server.listen(PORT, () => {
     console.log(
       `c2-backend  http://localhost:${PORT}  ws://localhost:${PORT}/ws`,

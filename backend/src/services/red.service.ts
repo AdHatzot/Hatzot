@@ -27,18 +27,18 @@ export async function getDrones(): Promise<Drone[]> {
 export function startRedFetchDronesJob(): void {
   setInterval(async () => {
     try {
-      const response = await axios.get<RemoteApiDrone[]>(API_URL);
+      const response = await axios.get<{ drones: RemoteApiDrone[] }>(API_URL);
 
       // Build all drone objects with positions in memory
-      const dronesToSave = response.data.map((apiDrone) => {
+      const dronesToSave = response.data.drones.map((apiDrone) => {
         const drone = new Drone();
-        drone.droneId = apiDrone.remoteId;
+        drone.droneId = apiDrone.id;
         drone.heading = String(apiDrone.heading);
         drone.velocity = "0"; // Velocity not provided by API
 
         // Attach position with CASCADE will handle insert/update
         const position = new DronePosition();
-        position.droneId = apiDrone.remoteId;
+        position.droneId = apiDrone.id;
         position.longitude = String(apiDrone.launch_point.longitude);
         position.latitude = String(apiDrone.launch_point.latitude);
         position.asl = "0"; // ASL not provided by API
