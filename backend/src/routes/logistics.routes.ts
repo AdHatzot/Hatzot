@@ -20,3 +20,13 @@ logisticsRoutes.get(
   "/launchers",
   asyncHandler(logistics.getLiveDeployments),
 );
+logisticsRoutes.get(
+  "/launcher-types",
+  asyncHandler(logistics.getAllLauncherTypes),
+);
+logisticsRoutes.get(
+  "/interceptor-types",
+  asyncHandler(logistics.getAllInterceptorTypes),
+);
+logisticsRoutes.get("/launcher-data", logistics.getAllLaunchers);
+logisticsRoutes.get("/launchers/:id", logistics.getLauncherById);

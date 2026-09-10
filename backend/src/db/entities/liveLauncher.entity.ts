@@ -50,7 +50,7 @@ export class LiveLauncher {
 
   @OneToMany(
     () => LauncherAmmunition,
-    (launcherAmmunition) => launcherAmmunition.launcher
+    (launcherAmmunition) => launcherAmmunition.launcher,
   )
   launcherAmmunitions!: LauncherAmmunition[];
 }

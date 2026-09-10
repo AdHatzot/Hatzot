@@ -20,6 +20,8 @@ import { dataSource } from "../db/data-source";
 import { LauncherAmmunition } from "../db/entities/launcherAmmunition.entity";
 import { LiveLauncher } from "../db/entities/liveLauncher.entity";
 import { HttpError } from "../shared/httpError";
+import { LauncherType } from "../db/entities/launcherType.entity";
+import { InterceptorType } from "../db/entities/InterceptorType.entity";
 
 export interface FireInterceptRequest {
   launcherId: number;
@@ -34,8 +36,36 @@ export interface FireInterceptResult {
 
 export const logisticsDeploymentRepository =
   dataSource.getRepository(Deployment);
+
 export const logisticsLiveLauncherRepository =
   dataSource.getRepository(LiveLauncher);
+
+export const getLunchersFromDb = async (): Promise<LiveLauncher[]> => {
+  return logisticsLiveLauncherRepository
+    .createQueryBuilder("launcher")
+    .leftJoinAndSelect("launcher.launcherType", "launcherType")
+    .leftJoinAndSelect("launcher.launcherAmmunitions", "ammunition")
+    .leftJoinAndSelect("ammunition.interceptorType", "interceptorType")
+    .where("launcher.active = :active", { active: true })
+    .getMany();
+};
+
+export const getLauncherFromDb = async (id: string): Promise<LiveLauncher | null> => {
+  return logisticsLiveLauncherRepository
+    .createQueryBuilder("launcher")
+    .leftJoinAndSelect("launcher.launcherType", "launcherType")
+    .leftJoinAndSelect("launcher.launcherAmmunitions", "ammunition")
+    .leftJoinAndSelect("ammunition.interceptorType", "interceptorType")
+    .where("launcher.id = :id", { id })
+    .andWhere("launcher.active = :active", { active: true })
+    .getOne();
+};
+
+export const logisticsLauncherTypeRepository =
+  dataSource.getRepository(LauncherType);
+
+export const logisticsInterceptorTypeRepository =
+  dataSource.getRepository(InterceptorType);
 
 export async function fireIntercept(
   request: FireInterceptRequest,
