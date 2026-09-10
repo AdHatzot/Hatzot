@@ -13,4 +13,9 @@
  *
  * See repositories/blue.repository.ts for the worked example.
  */
-export {};
+
+// import { createRepository, type Repository } from "../db";
+import { Deployment } from "../db/entities/logistics.entity";
+import { dataSource } from "../db/data-source";
+
+export const logisticsDeploymentRepository = dataSource.getRepository(Deployment);

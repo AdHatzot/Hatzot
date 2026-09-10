@@ -26,6 +26,35 @@
  *
  *   5. turn on the TypeORM branches in db/index.ts and db/typeorm.repository.ts.
  */
+import { DataSource } from "typeorm";
+import config from "../config";
+
+//add to .env
+// PORT=3000
+// DB_HOST=localhost
+// DB_PORT=5432
+// DB_NAME=postgres
+// DB_USERNAME=postgres
+// DB_PASSWORD=postgres
+// DB_SCHEMA=hatzot
+// NODE_ENV=dev
+
+export const dataSource = new DataSource({
+  type: "postgres",
+  entities: ["src/db/entities/*.ts"],
+  synchronize: false,
+  host: config.DB_HOST,
+  port: config.DB_PORT,
+  username: config.DB_USERNAME,
+  password: config.DB_PASSWORD,
+  database: config.DB_NAME,
+  schema: config.DB_SCHEMA,
+  logging: false,
+  migrations: ["dist/db/migrations/*.js"],
+  subscribers: [],
+  ssl: config.NODE_ENV === "production" || config.NODE_ENV === "development",
+});
+  
 export function isDatabaseConfigured(): boolean {
   const url = process.env.DB_URL;
   return url !== undefined && url.length > 0;

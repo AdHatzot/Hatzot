@@ -14,3 +14,4 @@ import { asyncHandler } from "../shared/asyncHandler";
 export const logisticsRoutes: Router = Router();
 
 logisticsRoutes.get("/", asyncHandler(logistics.getStatus));
+logisticsRoutes.get("/all", asyncHandler(logistics.getAll));
