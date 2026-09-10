@@ -40,7 +40,7 @@ export async function createInterception(drones_id: number[]): Promise<void> {
       launchedAt: new Date(),
       interceptorLongitude: data.interceptorLongitude,
       interceptorLatitude: data.interceptorLatitude,
-      status: InterceptionStatus.IN_PROGRESS,
+      status: InterceptionStatus.PENDING,
       result: null,
     }),
   );

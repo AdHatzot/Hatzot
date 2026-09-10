@@ -33,6 +33,7 @@ import { InterceptorType } from "./entities/InterceptorType.entity";
 import { LauncherAmmunition } from "./entities/launcherAmmunition.entity";
 import { LauncherType } from "./entities/launcherType.entity";
 import { LiveLauncher } from "./entities/liveLauncher.entity";
+import { Interception } from "./entities/interception.entity";
 
 //add to .env
 // PORT=3000
@@ -52,6 +53,7 @@ export const dataSource = new DataSource({
     LauncherType,
     LauncherAmmunition,
     InterceptorType,
+    Interception,
   ],
   synchronize: false,
   host: config.DB_HOST,
