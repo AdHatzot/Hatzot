@@ -395,11 +395,11 @@ export async function mountBlueLayer(
 
     launchers.forEach((launcher) => {
       L.circle([launcher.location.lat, launcher.location.long], {
-        radius: launcher.range,
+        radius: launcher.range / 2,
         color: "#1A8BE8",
         fillColor: "#1A8BE8",
-        fillOpacity: 0.15,
-        opacity: 0.6,
+        fillOpacity: 0.05,
+        opacity: 0.15,
         weight: 0.5,
       }).addTo(group);
 
