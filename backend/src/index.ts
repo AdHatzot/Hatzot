@@ -1,3 +1,5 @@
+import "reflect-metadata";
+
 /**
  * @team     core
  * @owner    core
