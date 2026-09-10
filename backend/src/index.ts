@@ -10,7 +10,7 @@ import "reflect-metadata";
  * per-team work lives in routes/ → controllers/ → services/ → repositories/.
  */
 import { createServer } from "node:http";
-import express, { type ErrorRequestHandler } from "express";
+import express from "express";
 import cors from "cors";
 import { attachHub } from "./ws";
 import { initDatabase } from "./db";
@@ -20,6 +20,8 @@ import { alertsRoutes } from "./routes/alerts.routes";
 import { logisticsRoutes } from "./routes/logistics.routes";
 import { loopRoutes } from "./routes/loop.routes";
 import { startBlueReloadTicker } from "./services/blue.service";
+import { errorHandler } from "./shared/errorHandler";
+import { startRedFetchDronesJob } from "./services/red.service";
 
 const PORT = Number(process.env.PORT ?? 3000);
 const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN ?? "http://localhost:5173";
@@ -39,19 +41,18 @@ app.use("/api/logistics", logisticsRoutes);
 app.use("/api/loop", loopRoutes);
 
 // Rejections from asyncHandler land here — JSON, never Express's HTML page.
-const onError: ErrorRequestHandler = (err, _req, res, _next) => {
-  console.error(err);
-  res.status(500).json({ error: "internal error" });
-};
-app.use(onError);
+app.use(errorHandler);
 
 async function main(): Promise<void> {
   await initDatabase();
   const server = createServer(app);
   attachHub(server);
   startBlueReloadTicker();
+  startRedFetchDronesJob();
   server.listen(PORT, () => {
-    console.log(`c2-backend  http://localhost:${PORT}  ws://localhost:${PORT}/ws`);
+    console.log(
+      `c2-backend  http://localhost:${PORT}  ws://localhost:${PORT}/ws`,
+    );
   });
 }
 
