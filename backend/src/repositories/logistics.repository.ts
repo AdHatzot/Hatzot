@@ -42,7 +42,7 @@ const getLunchersFromDb = async (): Promise<LiveLauncher[]> => {
   return logisticsLiveLauncherRepository
     .createQueryBuilder("launcher")
     .leftJoinAndSelect("launcher.launcherType", "launcherType")
-    .leftJoinAndSelect("launcher.ammunition", "ammunition")
+    .leftJoinAndSelect("launcher.launcherAmmunitions", "ammunition")
     .leftJoinAndSelect("ammunition.interceptorType", "interceptorType")
     .where("launcher.active = :active", { active: true })
     .getMany();
@@ -52,7 +52,7 @@ const getLauncherFromDb = async (id: string): Promise<LiveLauncher | null> => {
   return logisticsLiveLauncherRepository
     .createQueryBuilder("launcher")
     .leftJoinAndSelect("launcher.launcherType", "launcherType")
-    .leftJoinAndSelect("launcher.ammunition", "ammunition")
+    .leftJoinAndSelect("launcher.launcherAmmunitions", "ammunition")
     .leftJoinAndSelect("ammunition.interceptorType", "interceptorType")
     .where("launcher.id = :id", { id })
     .andWhere("launcher.active = :active", { active: true })
