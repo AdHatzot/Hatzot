@@ -142,17 +142,9 @@ export function SavedDeploymentsView(): JSX.Element {
         </div>
       )}
 
-      {/* Two-column layout matching Screenshot 3 */}
+      {/* Two-column layout matching design requirement */}
       <div className="grid flex-1 grid-cols-1 gap-5 lg:grid-cols-12 min-h-[560px]">
-        {/* Left Side: Map Preview Panel (5 cols) */}
-        <div className="lg:col-span-6 xl:col-span-5 h-full">
-          <DeploymentPreviewPanel
-            realDeployment={realDeployment}
-            selectedDeployment={selectedDeployment}
-          />
-        </div>
-
-        {/* Right Side: Saved Deployments Table (7 cols) */}
+        {/* Left Side: Saved Deployments Table (7 cols) */}
         <div className="lg:col-span-6 xl:col-span-7 h-full">
           <SavedDeploymentsTable
             deployments={deployments}
@@ -165,6 +157,14 @@ export function SavedDeploymentsView(): JSX.Element {
             onSelectDeployment={(dep) => setSelectedDeployment(dep)}
             selectedDeploymentId={selectedDeployment?.id}
             isPromotingId={isPromotingId}
+          />
+        </div>
+
+        {/* Right Side: Map Preview Panel (5 cols) */}
+        <div className="lg:col-span-6 xl:col-span-5 h-full">
+          <DeploymentPreviewPanel
+            realDeployment={realDeployment}
+            selectedDeployment={selectedDeployment}
           />
         </div>
       </div>
