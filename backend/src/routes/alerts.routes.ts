@@ -15,6 +15,7 @@ import { asyncHandler } from "../shared/asyncHandler";
 export const alertsRoutes: Router = Router();
 
 alertsRoutes.get("/", asyncHandler(alerts.getStatus));
+alertsRoutes.get("/status", asyncHandler(alerts.getAlertStatus));
 alertsRoutes.get("/cities", asyncHandler(alerts.getCityZones));
 alertsRoutes.post(
   "/cities/intersections",

@@ -38,6 +38,13 @@ export async function getStatus(_req: Request, res: Response): Promise<void> {
   res.json(await alertsService.getStatus());
 }
 
+export async function getAlertStatus(
+    _req: Request,
+    res: Response,
+): Promise<void> {
+    res.json(await alertsService.getAlertStatus());
+}
+
 export async function getCityZones(
   _req: Request,
   res: Response,

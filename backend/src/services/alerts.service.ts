@@ -10,6 +10,10 @@
  */
 import type { Team } from "../types";
 import type { Location } from "../types";
+import {
+    getAlertStatus as getAlertStatusFromRepository,
+    type AlertStatus,
+} from "../repositories/alerts.repository";
 import { readFile } from "fs/promises";
 import booleanIntersects from "@turf/boolean-intersects";
 import booleanPointInPolygon from "@turf/boolean-point-in-polygon";
@@ -48,6 +52,9 @@ export const getAlertsService = async () => {
     };
   });
 };
+
+export const getAlertStatus = async (): Promise<AlertStatus[]> =>
+    getAlertStatusFromRepository();
 
 export async function getCityZones(
   geojson: string,
