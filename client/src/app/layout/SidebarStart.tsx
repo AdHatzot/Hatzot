@@ -11,7 +11,7 @@ export function SidebarStart(): JSX.Element {
   return (
     <aside
       data-testid="ops-sidebar-start"
-      className="w-72 shrink-0 overflow-y-auto border-e border-line bg-panel p-3 text-sm"
+      className="w-96 shrink-0 overflow-y-auto border-e border-line bg-panel p-3 text-sm"
     >
       <AlertsPanel />
     </aside>

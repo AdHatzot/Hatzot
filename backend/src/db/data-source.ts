@@ -26,6 +26,58 @@
  *
  *   5. turn on the TypeORM branches in db/index.ts and db/typeorm.repository.ts.
  */
+import { DataSource } from "typeorm";
+import config from "../config";
+import { Deployment } from "./entities/deployment.entity";
+import { InterceptorType } from "./entities/interceptorType.entity";
+import { LauncherAmmunition } from "./entities/launcherAmmunition.entity";
+import { LauncherType } from "./entities/launcherType.entity";
+import { LiveLauncher } from "./entities/liveLauncher.entity";
+import { Interception } from "./entities/interception.entity";
+// Two classes map the drone tables: the interception entity's own (matches the
+// DDL) and the red team's. Both must be registered — Interception#drone points
+// at the first — so they are imported under distinct names.
+
+
+import { Drone } from "./entities/red/drone.entity";
+import { DroneType } from "./entities/red/drone-type.entity";
+import { DronePosition } from "./entities/red/drone-position.entity";
+
+//add to .env
+// PORT=3000
+// DB_HOST=localhost
+// DB_PORT=5433
+// DB_NAME=postgres
+// DB_USERNAME=postgres
+// DB_PASSWORD=postgres
+// DB_SCHEMA=hatzot
+// NODE_ENV=dev
+
+export const dataSource = new DataSource({
+  type: "postgres",
+  entities: [
+    Deployment,
+    LiveLauncher,
+    LauncherType,
+    LauncherAmmunition,
+    InterceptorType,
+    Interception,
+    Drone,
+    DroneType,
+    DronePosition,
+  ],
+  synchronize: false,
+  host: config.DB_HOST,
+  port: config.DB_PORT,
+  username: config.DB_USERNAME,
+  password: config.DB_PASSWORD,
+  database: config.DB_NAME,
+  schema: config.DB_SCHEMA,
+  logging: true,
+  migrations: ["dist/db/migrations/*.js"],
+  subscribers: [],
+});
+
 export function isDatabaseConfigured(): boolean {
   const url = process.env.DB_URL;
   return url !== undefined && url.length > 0;

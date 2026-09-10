@@ -2,10 +2,18 @@
  * @team     core
  * @owner    core
  * @public   yes
- * @updated  2026-09-08
+ * @updated  2026-09-09
  */
+
 import type { TeamMapLayer } from "@/shared/contracts";
 import { redLayer } from "@/features/red";
 import { blueLayer } from "@/features/blue";
+import { interceptionLayer } from "@/features/Interceptions";
+import { polygonLayer } from "@/features/poligon";
 
-export const TEAM_LAYERS: readonly TeamMapLayer[] = [redLayer, blueLayer];
+export const TEAM_LAYERS: readonly TeamMapLayer[] = [
+  redLayer,
+  blueLayer,
+  polygonLayer,
+  interceptionLayer,
+];
