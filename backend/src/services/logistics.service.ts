@@ -48,9 +48,7 @@ export async function getAll() {
   return await logisticsDeploymentRepository.find();
 }
 
-export async function getLiveDeployments(
-  deploymentId: number
-): Promise<
+export async function getLiveDeployments(deploymentId: number): Promise<
   Array<{
     deployment: unknown;
     launcherId: string;
@@ -93,6 +91,8 @@ export async function getLiveDeployments(
       asl: entity.asl,
       agl: entity.agl,
     },
-    ammunitionAmount: Number(results.raw[index]?.total_ammunition_quantity ?? 0),
+    ammunitionAmount: Number(
+      results.raw[index]?.total_ammunition_quantity ?? 0,
+    ),
   }));
 }

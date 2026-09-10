@@ -40,12 +40,16 @@ export async function fireIntercept(
     );
   }
 
-  res.json(
-    await logisticsService.fireIntercept({
-      launcherId,
-      interceptorTypeId,
-    }),
-  );
+  const result = await logisticsService.fireIntercept({
+    launcherId,
+    interceptorTypeId,
+  });
+
+  res
+    .type("text/plain")
+    .send(
+      `Interceptor ${result.interceptorTypeId} in launcher ${result.launcherId} was fired successfully.`,
+    );
 }
 
 export async function getAll(_req: Request, res: Response): Promise<void> {
