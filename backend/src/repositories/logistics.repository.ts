@@ -21,7 +21,7 @@ import { LauncherAmmunition } from "../db/entities/launcherAmmunition.entity";
 import { LiveLauncher } from "../db/entities/liveLauncher.entity";
 import { HttpError } from "../shared/httpError";
 import { LauncherType } from "../db/entities/launcherType.entity";
-import { InterceptorType } from "../db/entities/InterceptorType.entity";
+import { InterceptorType } from "../db/entities/interceptorType.entity";
 
 export interface FireInterceptRequest {
   launcherId: number;

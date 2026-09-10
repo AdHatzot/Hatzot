@@ -1,6 +1,6 @@
 import { Entity, PrimaryColumn, Column, ManyToOne, JoinColumn } from "typeorm";
 import { LiveLauncher } from "./liveLauncher.entity";
-import { InterceptorType } from "./InterceptorType.entity";
+import { InterceptorType } from "./interceptorType.entity";
 
 @Entity({ schema: "hatzot", name: "launcher_ammunition" })
 export class LauncherAmmunition {
