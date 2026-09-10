@@ -30,7 +30,7 @@ const launchers: Launcher[] = [
       lat: 33.0512,
       long: 35.2845,
     },
-    range: 40000,
+    range: 5000,
   },
   {
     id: 2,
@@ -39,7 +39,7 @@ const launchers: Launcher[] = [
       lat: 32.8341,
       long: 35.195,
     },
-    range: 40000,
+    range: 25000,
   },
   {
     id: 3,
@@ -48,7 +48,7 @@ const launchers: Launcher[] = [
       lat: 33.185,
       long: 35.572,
     },
-    range: 60000,
+    range: 10000,
   },
   {
     id: 4,
@@ -57,7 +57,7 @@ const launchers: Launcher[] = [
       lat: 32.981,
       long: 35.421,
     },
-    range: 25000,
+    range: 9000,
   },
 ];
 
@@ -449,6 +449,15 @@ export function mountBlueLayer(group: LayerGroup, _map: LeafletMap): void {
   });
 
   launchers.forEach((launcher) => {
+    L.circle([launcher.location.lat, launcher.location.long], {
+      radius: launcher.range,
+      color: "#1A8BE8",
+      fillColor: "#1A8BE8",
+      fillOpacity: 0.15,
+      opacity: 0.6,
+      weight: 0.5,
+    }).addTo(group);
+
     L.marker([launcher.location.lat, launcher.location.long], {
       icon: blueIcon,
     })

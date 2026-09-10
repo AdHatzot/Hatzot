@@ -52,9 +52,9 @@ export const dataSource = new DataSource({
   logging: false,
   migrations: ["dist/db/migrations/*.js"],
   subscribers: [],
-  ssl: config.NODE_ENV === "production" || config.NODE_ENV === "development",
+  ssl: false,
 });
-  
+
 export function isDatabaseConfigured(): boolean {
   const url = process.env.DB_URL;
   return url !== undefined && url.length > 0;
