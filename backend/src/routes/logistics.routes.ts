@@ -36,5 +36,21 @@ logisticsRoutes.post(
   "/deployments",
   asyncHandler(logistics.createDeployment),
 );
+logisticsRoutes.patch(
+  "/deployments/:id",
+  asyncHandler(logistics.updateDeployment),
+);
+logisticsRoutes.put(
+  "/deployments/:id",
+  asyncHandler(logistics.updateDeployment),
+);
+logisticsRoutes.patch(
+  "/deployment/:id",
+  asyncHandler(logistics.updateDeployment),
+);
+logisticsRoutes.put(
+  "/deployment/:id",
+  asyncHandler(logistics.updateDeployment),
+);
 logisticsRoutes.get("/launcher-data", asyncHandler(logistics.getAllLaunchers));
 logisticsRoutes.get("/launchers/:id", asyncHandler(logistics.getLauncherById));

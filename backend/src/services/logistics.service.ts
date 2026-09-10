@@ -12,8 +12,10 @@ import type { Team } from "../types";
 import {
   fireIntercept as fireInterceptInRepository,
   createDeployment as createDeploymentInRepository,
+  updateDeployment as updateDeploymentInRepository,
   type FireInterceptRequest,
   type CreateDeploymentRequest,
+  type UpdateDeploymentRequest,
 } from "../repositories/logistics.repository";
 import { dataSource } from "../db/data-source";
 import { LiveLauncher } from "../db/entities/liveLauncher.entity";
@@ -118,6 +120,13 @@ export async function getAllInterceptorTypes(): Promise<Array<InterceptorType>> 
 
 export async function createDeployment(request: CreateDeploymentRequest) {
   return await createDeploymentInRepository(request);
+}
+
+export async function updateDeployment(
+  deploymentId: number,
+  request: UpdateDeploymentRequest,
+) {
+  return await updateDeploymentInRepository(deploymentId, request);
 }
 
 const mapLauncher = (launcher: LiveLauncher): LauncherData => {

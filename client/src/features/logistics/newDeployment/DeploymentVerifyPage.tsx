@@ -38,12 +38,108 @@ export function DeploymentVerifyPage(): JSX.Element {
   }, [state, navigate]);
 
   const deploymentName = state?.deploymentName ?? "";
-  const parsedRows = state?.rows ?? [];
+  const initialRows = state?.rows ?? [];
   const currentFileName = state?.fileName ?? "";
 
   const [isEditingName, setIsEditingName] = useState(false);
   const [editableName, setEditableName] = useState(deploymentName);
+  const [editableRows, setEditableRows] = useState<CsvRow[]>(initialRows);
+  const [rowsHistory, setRowsHistory] = useState<CsvRow[][]>([]);
   const [mapSearch, setMapSearch] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  // Compute number of unsaved changes (name changed + any row modifications)
+  const unsavedChangesCount =
+    (editableName.trim() !== deploymentName.trim() ? 1 : 0) +
+    rowsHistory.length;
+
+  const handleUndo = () => {
+    if (rowsHistory.length === 0) return;
+    const prevRows = rowsHistory[rowsHistory.length - 1];
+    setEditableRows(prevRows);
+    setRowsHistory((prev) => prev.slice(0, prev.length - 1));
+  };
+
+  /**
+   * Generic handler to update a launcher row (e.g. from coordinates change on the map or panel)
+   */
+  const handleUpdateRow = (index: number, updatedFields: Partial<CsvRow>) => {
+    setRowsHistory((prev) => [...prev, editableRows]);
+    setEditableRows((prev) => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], ...updatedFields };
+      return updated;
+    });
+  };
+
+  /**
+   * Saves updated deployment details (name, updated launcher rows/coordinates)
+   * via PATCH /api/logistics/deployments/:id and returns to /logistics
+   */
+  const handleSaveDeployment = async () => {
+    if (!state?.deploymentId) {
+      navigate("/logistics");
+      return;
+    }
+
+    setIsSaving(true);
+    setSaveError(null);
+
+    try {
+      const payload: {
+        name: string;
+        rows?: Array<{
+          id?: string;
+          launcher_type_name?: string;
+          longitude?: number;
+          latitude?: number;
+          asl?: number;
+          agl?: number;
+          amount?: number;
+        }>;
+      } = {
+        name: editableName.trim() || deploymentName,
+      };
+
+      // If rows have been edited, pass the formatted row updates
+      if (rowsHistory.length > 0) {
+        payload.rows = editableRows.map((r) => ({
+          launcher_type_name: r.launcher_type_name,
+          longitude: Number(r.longitude),
+          latitude: Number(r.latitude),
+          asl: Number(r.asl),
+          agl: Number(r.agl),
+          amount: Number(r.amount),
+        }));
+      }
+
+      const response = await fetch(
+        `${API_URL}/api/logistics/deployments/${state.deploymentId}`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        },
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(
+          errorData?.message ?? `שגיאה בשמירת הפריסה (${response.status})`,
+        );
+      }
+
+      // Successfully saved - navigate back to logistics tab
+      navigate("/logistics");
+    } catch (err) {
+      console.error("Failed to save deployment:", err);
+      const msg = err instanceof Error ? err.message : "שגיאה בשמירת הפריסה";
+      setSaveError(msg);
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   // Launcher types from API
   const [launcherTypes, setLauncherTypes] = useState<LauncherTypeFromApi[]>([]);
@@ -91,12 +187,12 @@ export function DeploymentVerifyPage(): JSX.Element {
   }, []);
 
   /**
-   * Aggregate launcher types from parsed rows, ordered by API launcher types
+   * Aggregate launcher types from editable rows, ordered by API launcher types
    */
   const launcherSummaries: LauncherTypeSummary[] = useMemo(() => {
     const counts: Record<string, number> = {};
 
-    parsedRows.forEach((row) => {
+    editableRows.forEach((row) => {
       const typeName = (row.launcher_type_name || "").trim();
       if (typeName) {
         counts[typeName] = (counts[typeName] || 0) + 1;
@@ -119,7 +215,7 @@ export function DeploymentVerifyPage(): JSX.Element {
     });
 
     return result;
-  }, [parsedRows, launcherTypes]);
+  }, [editableRows, launcherTypes]);
 
   const handleTogglePreviewLauncher = (typeName?: string) => {
     if (selectedLauncher) {
@@ -133,7 +229,7 @@ export function DeploymentVerifyPage(): JSX.Element {
     const rangeKm = apiType?.rangeM ? `${Math.round(apiType.rangeM / 1000)} ק"מ` : '—';
 
     // Find the first matching row from parsed data for coordinates
-    const matchingRow = parsedRows.find(
+    const matchingRow = editableRows.find(
       (r) => (r.launcher_type_name || "").trim() === targetType,
     );
 
@@ -149,8 +245,8 @@ export function DeploymentVerifyPage(): JSX.Element {
     });
   };
 
-  const validCount = parsedRows.length;
-  const totalIdentified = parsedRows.length;
+  const validCount = editableRows.length;
+  const totalIdentified = editableRows.length;
 
   if (!state) {
     return <div />;
@@ -232,19 +328,37 @@ export function DeploymentVerifyPage(): JSX.Element {
 
         {/* Left: Action Buttons */}
         <div className="flex items-center gap-3">
+          {saveError && (
+            <span className="text-xs text-rose-400 font-medium">
+              {saveError}
+            </span>
+          )}
+
           <button
             type="button"
             onClick={() => navigate("/logistics")}
-            className="rounded-md border border-[#374457] bg-[#111722] px-4 py-1.5 text-sm font-medium text-gray-200 transition hover:bg-[#1a2332] hover:text-white"
+            disabled={isSaving}
+            className="rounded-md border border-[#374457] bg-[#111722] px-4 py-1.5 text-sm font-medium text-gray-200 transition hover:bg-[#1a2332] hover:text-white disabled:opacity-50"
           >
-            חזור להעלאה
+            חזור
           </button>
 
           <button
             type="button"
-            className="flex items-center gap-2 rounded-md bg-white px-5 py-1.5 text-sm font-semibold text-[#0c1017] shadow transition hover:bg-gray-100 active:scale-[0.98]"
+            onClick={() => void handleSaveDeployment()}
+            disabled={isSaving}
+            className="flex items-center gap-2 rounded-md bg-white px-5 py-1.5 text-sm font-semibold text-[#0c1017] shadow transition hover:bg-gray-100 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <span>אשר ושמור פריסה</span>
+            {isSaving ? (
+              <>
+                <svg className="h-4 w-4 animate-spin text-[#0c1017]" viewBox="0 0 24 24" fill="none">
+                  <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="31.4 31.4" strokeLinecap="round" />
+                </svg>
+                <span>שומר...</span>
+              </>
+            ) : (
+              <span>אשר ושמור פריסה</span>
+            )}
           </button>
         </div>
       </div>
@@ -294,12 +408,9 @@ export function DeploymentVerifyPage(): JSX.Element {
                   <div className="col-span-4 py-4 text-xs text-gray-400">טוען...</div>
                 ) : (
                   launcherSummaries.slice(0, 4).map((item) => (
-                    <button
+                    <div
                       key={item.name}
-                      type="button"
-                      onClick={() => handleTogglePreviewLauncher(item.name)}
-                      className="flex flex-col items-center justify-between rounded-md border border-[#1e2837] bg-[#0e141e] p-2.5 transition hover:border-[#384a62] hover:bg-[#131b27]"
-                      title={`לחץ לבחירת ${item.name}`}
+                      className="flex flex-col items-center justify-between rounded-md border border-[#1e2837] bg-[#0e141e] p-2.5"
                     >
                       <div className="my-1 flex h-8 items-center justify-center">
                         {getLauncherTypeIcon(item.name, 26)}
@@ -310,7 +421,7 @@ export function DeploymentVerifyPage(): JSX.Element {
                       <div className="mt-1 text-sm font-bold text-white">
                         {item.count}
                       </div>
-                    </button>
+                    </div>
                   ))
                 )}
               </div>
@@ -450,12 +561,20 @@ export function DeploymentVerifyPage(): JSX.Element {
           {/* Bottom Bar: Unsaved changes & Undo button */}
           <div className="flex items-center justify-between rounded-lg border border-[#1e2736] bg-[#0c1118] px-4 py-3 text-xs">
             <span className="text-[#8896a6]">
-              שינויים שלא נשמרו: <strong className="font-semibold text-white">0</strong>
+              שינויים שלא נשמרו:{" "}
+              <strong className={`font-semibold ${unsavedChangesCount > 0 ? "text-amber-400" : "text-white"}`}>
+                {unsavedChangesCount}
+              </strong>
             </span>
             <button
               type="button"
-              disabled
-              className="flex items-center gap-1.5 text-[#64748b] cursor-not-allowed transition"
+              onClick={handleUndo}
+              disabled={rowsHistory.length === 0}
+              className={`flex items-center gap-1.5 transition ${
+                rowsHistory.length > 0
+                  ? "text-sky-400 hover:text-sky-300 cursor-pointer"
+                  : "text-[#64748b] cursor-not-allowed"
+              }`}
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M3 7v6h6" />
@@ -561,9 +680,7 @@ export function DeploymentVerifyPage(): JSX.Element {
                     .map((item) => (
                       <div
                         key={item.name}
-                        onClick={() => handleTogglePreviewLauncher(item.name)}
-                        className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition"
-                        title={`לחץ לתצוגה מקדימה - ${item.name}`}
+                        className="flex items-center gap-2"
                       >
                         {getLauncherTypeIcon(item.name, 20)}
                         <div className="flex items-baseline gap-1 text-xs">
