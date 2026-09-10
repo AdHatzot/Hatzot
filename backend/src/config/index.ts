@@ -6,6 +6,7 @@ const config = {
   DB_USERNAME: process.env.DB_USERNAME! || "postgres",
   DB_PASSWORD: process.env.DB_PASSWORD! || "postgres",
   DB_SCHEMA: process.env.DB_SCHEMA! || "hatzot",
+  DB_SSL: process.env.DB_SSL === "true",
   NODE_ENV: process.env.NODE_ENV || "production",
 };
 
