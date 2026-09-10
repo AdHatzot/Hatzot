@@ -17,6 +17,7 @@
 // import { createRepository, type Repository } from "../db";
 import { Deployment } from "../db/entities/deployment.entity";
 import { dataSource } from "../db/data-source";
+import { LauncherData } from "../utils/LiveLauncherTypes";
 import { LauncherAmmunition } from "../db/entities/launcherAmmunition.entity";
 import { LiveLauncher } from "../db/entities/liveLauncher.entity";
 import { HttpError } from "../shared/httpError";
@@ -40,6 +41,60 @@ export const logisticsDeploymentRepository =
 export const logisticsLiveLauncherRepository =
   dataSource.getRepository(LiveLauncher);
 
+const getLunchersFromDb = async (): Promise<LiveLauncher[]> => {
+  return logisticsLiveLauncherRepository
+    .createQueryBuilder("launcher")
+    .leftJoinAndSelect("launcher.launcherType", "launcherType")
+    .leftJoinAndSelect("launcher.launcherAmmunitions", "ammunition")
+    .leftJoinAndSelect("ammunition.interceptorType", "interceptorType")
+    .where("launcher.active = :active", { active: true })
+    .getMany();
+};
+
+const getLauncherFromDb = async (id: string): Promise<LiveLauncher | null> => {
+  return logisticsLiveLauncherRepository
+    .createQueryBuilder("launcher")
+    .leftJoinAndSelect("launcher.launcherType", "launcherType")
+    .leftJoinAndSelect("launcher.launcherAmmunitions", "ammunition")
+    .leftJoinAndSelect("ammunition.interceptorType", "interceptorType")
+    .where("launcher.id = :id", { id })
+    .andWhere("launcher.active = :active", { active: true })
+    .getOne();
+};
+
+const mapLauncher = (launcher: LiveLauncher): LauncherData => {
+  return {
+    id: launcher.id,
+    name: launcher.launcherType.name,
+    location: {
+      lat: launcher.latitude,
+      long: launcher.longitude,
+    },
+    range: launcher.launcherType.rangeM,
+    interceptors: launcher.launcherAmmunitions.map((ammunition) => ({
+      name: ammunition.interceptorType.name,
+      amount: ammunition.quantity,
+    })),
+  };
+};
+
+const getAllLaunchers = async (): Promise<LauncherData[]> => {
+  const launchers = await getLunchersFromDb();
+
+  return launchers.map(mapLauncher);
+};
+
+const getLauncherById = async (id: string): Promise<LauncherData | null> => {
+  const launcher = await getLauncherFromDb(id);
+
+  if (!launcher) {
+    return null;
+  }
+
+  return mapLauncher(launcher);
+};
+
+export { getAllLaunchers, getLauncherById };
 export const logisticsLauncherTypeRepository =
   dataSource.getRepository(LauncherType);
 
