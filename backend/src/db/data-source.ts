@@ -69,7 +69,6 @@ export const dataSource = new DataSource({
   logging: true,
   migrations: ["dist/db/migrations/*.js"],
   subscribers: [],
-  ssl: config.NODE_ENV === "production" || config.NODE_ENV === "development",
 });
 
 export function isDatabaseConfigured(): boolean {
