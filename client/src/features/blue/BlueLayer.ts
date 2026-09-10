@@ -33,8 +33,8 @@ function createLauncherPopup(launcher: Launcher): string {
   const interceptorRows =
     interceptors.length > 0
       ? interceptors
-          .map(
-            (interceptor) => `
+        .map(
+          (interceptor) => `
               <tr>
                 <td style="
                   padding:8px 4px;
@@ -56,8 +56,8 @@ function createLauncherPopup(launcher: Launcher): string {
                 </td>
               </tr>
             `,
-          )
-          .join("")
+        )
+        .join("")
       : `
           <tr>
             <td
@@ -394,6 +394,15 @@ export async function mountBlueLayer(
     });
 
     launchers.forEach((launcher) => {
+      L.circle([launcher.location.lat, launcher.location.long], {
+        radius: launcher.range,
+        color: "#1A8BE8",
+        fillColor: "#1A8BE8",
+        fillOpacity: 0.15,
+        opacity: 0.6,
+        weight: 0.5,
+      }).addTo(group);
+
       L.marker(
         [
           launcher.location.lat,
