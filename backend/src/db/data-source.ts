@@ -32,7 +32,7 @@ import config from "../config";
 //add to .env
 // PORT=3000
 // DB_HOST=localhost
-// DB_PORT=5433
+// DB_PORT=5432
 // DB_NAME=postgres
 // DB_USERNAME=postgres
 // DB_PASSWORD=postgres
