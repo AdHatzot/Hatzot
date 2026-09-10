@@ -1,5 +1,5 @@
 import { Drone } from "@/types/drones";
-import { Crosshair } from "lucide-react";
+import { CrosshairIcon } from "./CrosshairIcon";
 
 // const THREAT_LABELS: Record<ThreatLevel, string> = {
 //   high: "High",
@@ -29,7 +29,7 @@ export function DroneRow({ drone }: { drone: Drone }): JSX.Element {
         className="flex items-center gap-1.5 text-xs text-text-dim hover:text-text"
         onClick={() => alert("shot one")}
       >
-        <Crosshair className="h-3.5 w-3.5" />
+        <CrosshairIcon className="h-3.5 w-3.5" />
         יירט
       </button>
     </div>
