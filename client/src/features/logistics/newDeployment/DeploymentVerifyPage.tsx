@@ -158,52 +158,9 @@ export function DeploymentVerifyPage(): JSX.Element {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex flex-col overflow-hidden bg-[#070a0e] text-white"
+      className="flex h-full w-full flex-col overflow-hidden bg-[#070a0e] text-white"
       dir="rtl"
     >
-      {/* ================= TOP TACTICAL APP BAR ================= */}
-      <header className="flex h-12 shrink-0 items-center justify-between border-b border-[#1c2533] bg-[#0b0f15] px-5 text-sm">
-        {/* Right side: Menu & Live indicators */}
-        <div className="flex items-center gap-5">
-          <button
-            type="button"
-            aria-label="תפריט"
-            className="flex h-8 w-8 items-center justify-center rounded text-gray-300 transition hover:bg-white/10 hover:text-white"
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-              <line x1="3" y1="12" x2="21" y2="12" />
-              <line x1="3" y1="6" x2="21" y2="6" />
-              <line x1="3" y1="18" x2="21" y2="18" />
-            </svg>
-          </button>
-
-          <div className="flex items-center gap-2 text-xs font-medium text-gray-300">
-            <span className="inline-block h-2.5 w-2.5 rounded-full bg-[#38bdf8] shadow-[0_0_8px_#38bdf8]" />
-            <span>שידור חי</span>
-          </div>
-
-          <div className="flex items-center gap-2 text-xs font-medium text-gray-300">
-            <span className="inline-block h-2.5 w-2.5 rounded-full bg-[#22c55e] shadow-[0_0_8px_#22c55e]" />
-            <span>מערכות תקינות</span>
-          </div>
-        </div>
-
-        {/* Center: Brand Name */}
-        <div className="text-base font-extrabold tracking-wider text-white">
-          חצות
-        </div>
-
-        {/* Left side: Command Center Logo */}
-        <div className="flex items-center gap-2">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-300">
-            <path d="M12 3L2 20H22L12 3Z" />
-            <path d="M12 9L7 18H17L12 9Z" />
-          </svg>
-          <span className="text-xs font-semibold uppercase tracking-wider text-gray-200">
-            מרכז פיקוד טקטי
-          </span>
-        </div>
-      </header>
 
       {/* ================= ACTION SUB-HEADER BAR ================= */}
       <div className="flex h-14 shrink-0 items-center justify-between border-b border-[#1c2533] bg-[#0c1118] px-6">
