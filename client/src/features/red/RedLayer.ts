@@ -2,66 +2,85 @@
  * @team     red
  * @owner    red-lead
  * @public   no
- * @updated  2026-09-09
+ * @updated  2026-09-10
  *
+ * Drone markers are driven entirely by the ws feed. Every backend pull of the
+ * external API (2s) pushes `red:drones.updated` carrying that pull only — the
+ * layer mirrors it exactly, so the map shows the drones currently being
+ * tracked, never the DB's full history.
  */
 import L, { type LayerGroup, type Map as LeafletMap } from "leaflet";
-import axios from "axios";
-import { type Drone } from "@/types";
 import { cssVar } from "@/shared/theme";
-import { Console } from "console";
+import { subscribeRedEvent } from "./redSocket";
 
-const droneMarkers = new Map<number, L.CircleMarker>();
+/** Mirror of RedDroneTick in backend/src/services/red.service.ts. */
+export type RedDroneTick = {
+  id: number;
+  droneId: string;
+  type: string;
+  heading: number;
+  latitude: number;
+  longitude: number;
+  timestamp: string;
+};
+
+const droneMarkers = new Map<string, L.CircleMarker>();
+
+let pendingTick: RedDroneTick[] | null = null;
+let frame: number | null = null;
 
 export function mountRedLayer(group: LayerGroup, _map: LeafletMap): void {
-  const DRONES_FETCH_TIMER = 2 * 1000; // 2 seconds converted to millies
-
-  fetchAndUpdateDrones(group);
-
-  setInterval(() => {
-    fetchAndUpdateDrones(group);
-  }, DRONES_FETCH_TIMER);
+  subscribeRedEvent("red:drones.updated", (payload) => {
+    queueTick(group, payload as RedDroneTick[]);
+  });
 }
 
-async function fetchAndUpdateDrones(group: LayerGroup): Promise<void> {
-  try {
+/**
+ * Positions never go through React state (hard rule 5) — the newest tick wins
+ * and is written straight onto the Leaflet layer inside requestAnimationFrame.
+ */
+function queueTick(group: LayerGroup, drones: RedDroneTick[]): void {
+  pendingTick = drones;
+  if (frame !== null) return;
 
-    const SERVER_URL = import.meta.env.SERVER_URL ?? `http://localhost:3000` ;
-    const response = await axios.get<Drone[]>(`${SERVER_URL}/api/red/drones`);
-    console.log(response)
+  frame = requestAnimationFrame(() => {
+    frame = null;
+    const batch = pendingTick;
+    pendingTick = null;
+    if (batch) renderTick(group, batch);
+  });
+}
 
-    const drones = response.data;
-    const colour = cssVar("--team-red");
+function renderTick(group: LayerGroup, drones: RedDroneTick[]): void {
+  const colour = cssVar("--team-red");
+  const currentIds = new Set(drones.map((d) => d.droneId));
 
-    // Track which IDs we saw in this fetch
-    const currentIds = new Set(drones.map((d) => d.id));
-
-    for (const [id, marker] of droneMarkers) {
-      if (!currentIds.has(id)) {
-        group.removeLayer(marker);
-        droneMarkers.delete(id);
-      }
+  // Anything this pull did not return is no longer tracked — drop it.
+  for (const [droneId, marker] of droneMarkers) {
+    if (!currentIds.has(droneId)) {
+      group.removeLayer(marker);
+      droneMarkers.delete(droneId);
     }
+  }
 
-    for (const drone of drones) {
-      const { latitude, longitude } = drone.position;
+  for (const drone of drones) {
+    const { latitude, longitude } = drone;
+    if (Number.isNaN(latitude) || Number.isNaN(longitude)) continue;
 
-      if (droneMarkers.has(drone.id)) {
-        droneMarkers.get(drone.id)!.setLatLng([latitude, longitude]);
-      } else {
-        const marker = L.circleMarker([latitude, longitude], {
-          radius: 7,
-          color: colour,
-          fillColor: colour,
-          fillOpacity: 0.85,
-          weight: 2,
-        })
-          .bindTooltip(`רחפן #${drone.id}`, { direction: "top" })
-          .addTo(group);
-        droneMarkers.set(drone.id, marker);
-      }
+    const existing = droneMarkers.get(drone.droneId);
+    if (existing) {
+      existing.setLatLng([latitude, longitude]);
+    } else {
+      const marker = L.circleMarker([latitude, longitude], {
+        radius: 7,
+        color: colour,
+        fillColor: colour,
+        fillOpacity: 0.85,
+        weight: 2,
+      })
+        .bindTooltip(`רחפן ${drone.droneId}`, { direction: "top" })
+        .addTo(group);
+      droneMarkers.set(drone.droneId, marker);
     }
-  } catch (err) {
-    console.error("Failed to fetch drones", err);
   }
 }
