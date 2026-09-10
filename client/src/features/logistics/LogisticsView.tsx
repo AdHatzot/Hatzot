@@ -1,3 +1,5 @@
+import { NewDeploymentButton } from "./newDeployment/NewDeploymentButton.tsx";
+
 /**
  * @team     logistics
  * @owner    logistics-lead
@@ -13,6 +15,10 @@ export function LogisticsView(): JSX.Element {
     >
       <h1 className="mb-3 text-lg font-medium">יצירת פריסה</h1>
       <p className="text-sm text-text-dim">מלאי, חימוש וזמינות כלים.</p>
+
+      <div className="mt-6">
+        <NewDeploymentButton />
+      </div>
     </div>
   );
 }
