@@ -44,8 +44,8 @@ export class Interception {
   })
   interceptorLatitude!: number | null;
 
-  @Column({ name: "priority", type: "smallint" })
-  priority!: number;
+  @Column({ name: "priority", type: "smallint", nullable: true })
+  priority!: number | null;
 
   @Column({
     name: "status",
