@@ -7,6 +7,8 @@
  * The tracked-drone feed. Every POLL_MS: fetch the external API, push the pull
  * to every screen over ws, then store it — each drone once, plus one position
  * row per drone per pull for route calculation. The map never waits on the DB.
+ * Drones shot down (destroyDrone) stay off the screens even though the feed
+ * keeps reporting them.
  */
 import axios from "axios";
 import { broadcast } from "../ws";
@@ -59,6 +61,14 @@ export async function getDrones(): Promise<Drone[]> {
 const knownDroneIds = new Map<string, number>();
 const droneTypes = new Map<string, DroneType>();
 
+// The latest pull, and the drones shot down since the backend started.
+let lastPull: RemoteApiDrone[] = [];
+const destroyedDroneIds = new Set<string>();
+
+function activeDrones(drones: RemoteApiDrone[]): RemoteApiDrone[] {
+  return drones.filter((drone) => !destroyedDroneIds.has(drone.id));
+}
+
 async function droneTypeFor(name: string): Promise<DroneType> {
   let type = droneTypes.get(name);
   if (!type) {
@@ -78,6 +88,41 @@ function toTick(apiDrone: RemoteApiDrone): RedDroneTick {
     longitude: apiDrone.launch_point.longitude,
     timestamp: apiDrone.timestamp,
   };
+}
+
+function broadcastTick(drones: RemoteApiDrone[]): void {
+  // A tick is the whole current picture: the client mirrors it exactly,
+  // dropping any marker whose drone this pull did not return.
+  broadcast("red:drones.updated", activeDrones(drones).map(toTick));
+}
+
+/** The drones with these feed ids in the latest pull, minus any shot down. */
+export function getTrackedDrones(droneIds: readonly string[]): RemoteApiDrone[] {
+  const wanted = new Set(droneIds);
+  return activeDrones(lastPull).filter((drone) => wanted.has(drone.id));
+}
+
+/** DB ids for these feed ids. A drone not stored yet is simply absent. */
+export async function resolveDroneDbIds(droneIds: readonly string[]): Promise<Map<string, number>> {
+  const ids = new Map<string, number>();
+  const missing: string[] = [];
+  for (const droneId of droneIds) {
+    const id = knownDroneIds.get(droneId);
+    if (id === undefined) missing.push(droneId);
+    else ids.set(droneId, id);
+  }
+  for (const [droneId, id] of await findDroneIds(missing)) {
+    knownDroneIds.set(droneId, id);
+    ids.set(droneId, id);
+  }
+  return ids;
+}
+
+/** A drone was shot down: drop it from every screen now and from every later pull. */
+export function destroyDrone(droneId: string): void {
+  if (destroyedDroneIds.has(droneId)) return;
+  destroyedDroneIds.add(droneId);
+  broadcastTick(lastPull);
 }
 
 /** Store one pull: drones it has not seen yet, then a position row per drone. */
@@ -141,15 +186,12 @@ export function startRedFetchDronesJob(): void {
       const response = await axios.get<{ drones: RemoteApiDrone[] }>(API_URL, {
         timeout: FETCH_TIMEOUT_MS,
       });
-      const apiDrones = response.data.drones;
-
-      // A tick is the whole current picture: the client mirrors it exactly,
-      // dropping any marker whose drone this pull did not return.
-      broadcast("red:drones.updated", apiDrones.map(toTick));
+      lastPull = response.data.drones;
+      broadcastTick(lastPull);
 
       if (!storing) {
         storing = true;
-        persistPull(apiDrones)
+        persistPull(activeDrones(lastPull))
           .catch((error: unknown) => console.error("Storing red drone pull failed:", error))
           .finally(() => {
             storing = false;

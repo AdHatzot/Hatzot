@@ -6,10 +6,6 @@
  */
 
 import L, { type LayerGroup, type Map as LeafletMap } from "leaflet";
-import BlueMarker from "../../public/icons/blue-marker.svg";
-import CloudFence from "../../public/icons/CloudFence-Area.svg";
-import HorizonEye from "../../public/icons/HorizonEye-MX.svg";
-import IronHook from "../../public/icons/IronHook-SR.svg";
 
 const API_BASE_URL = "http://localhost:3000";
 

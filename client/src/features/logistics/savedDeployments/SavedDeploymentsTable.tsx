@@ -194,7 +194,7 @@ export function SavedDeploymentsTable({
                     key={item.key}
                     type="button"
                     onClick={() => {
-                      setStatusFilter(item.key as any);
+                      setStatusFilter(item.key as typeof statusFilter);
                       setIsFilterMenuOpen(false);
                       setCurrentPage(1);
                     }}

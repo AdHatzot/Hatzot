@@ -5,7 +5,6 @@ import {
   createSampleCsvFile,
   SAMPLE_CSV_ROWS,
   SAMPLE_DEPLOYMENT_NAME,
-  SAMPLE_FILE_NAME,
 } from "./sampleData";
 
 type NewDeploymentModalProps = {

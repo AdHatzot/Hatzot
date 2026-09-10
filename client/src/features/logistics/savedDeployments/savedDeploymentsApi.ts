@@ -10,6 +10,21 @@ export async function fetchDeployments(): Promise<DeploymentItem[]> {
   return response.json();
 }
 
+export interface LauncherTypeItem {
+  id: number;
+  name: string;
+  reloadTimeS: string | number | null;
+  rangeM: number | null;
+}
+
+export async function fetchLauncherTypes(): Promise<LauncherTypeItem[]> {
+  const response = await fetch(`${API_URL}/api/logistics/launcher-types`);
+  if (!response.ok) {
+    throw new Error(`שגיאה בטעינת סוגי משגרים (${response.status})`);
+  }
+  return response.json();
+}
+
 export async function fetchRealDeployment(): Promise<DeploymentItem | null> {
   const response = await fetch(`${API_URL}/api/logistics/deployments/live`);
   if (response.status === 404) {

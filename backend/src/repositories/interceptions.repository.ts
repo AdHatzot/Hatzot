@@ -2,21 +2,61 @@
  * @team     loop
  * @owner    loop-lead
  * @public   yes
- * @updated  2026-09-09
+ * @updated  2026-09-10
  *
- * Intentionally empty — the loop shape arrives with the feed. When it does:
- *
- *   1. describe the entity in src/db/entities/loop.entity.ts (extends Identifiable)
- *   2. optional seed rows in src/db/seed/loop.seed.ts
- *   3. export const loopRepository: Repository<YourEntity> =
- *        createRepository<YourEntity>("YourEntity", SEED);
- *
- * See repositories/blue.repository.ts for the worked example.
+ * Interception rows, and the stocked launcher lines an interceptor can be
+ * fired from.
  */
+import { MoreThan } from "typeorm";
 import { dataSource } from "../db/data-source";
 import { Interception } from "../db/entities/interception.entity";
+import type { EstimatedSuccessRate } from "../db/entities/interceptorType.entity";
+import { LauncherAmmunition } from "../db/entities/launcherAmmunition.entity";
 
 export const interceptionsRepository = dataSource.getRepository(Interception);
+
+/**
+ * Drone type names differ in spelling between the feed ("Falcon-Long X4") and
+ * the success-rate table ("Falcon Long X4") — compare letters and digits only.
+ */
+export function sameDroneType(a: string, b: string): boolean {
+  const key = (name: string): string => name.toLowerCase().replace(/[^a-z0-9]/g, "");
+  return key(a) === key(b);
+}
+
+/** A launcher line with interceptors left: where it stands and how well it hits. */
+export interface StockedLauncher {
+  launcherId: number;
+  interceptorTypeId: number;
+  interceptorName: string;
+  latitude: number;
+  longitude: number;
+  successRates: EstimatedSuccessRate[];
+}
+
+/**
+ * Every (launcher, interceptor type) pair with stock and a known position.
+ * An interception row must reference one of these pairs (its composite FK
+ * points into launcher_ammunition), so they are the only places a shot can
+ * come from.
+ */
+export async function findStockedLaunchers(): Promise<StockedLauncher[]> {
+  const rows = await dataSource.getRepository(LauncherAmmunition).find({
+    where: { quantity: MoreThan(0) },
+    relations: { launcher: true, interceptorType: true },
+  });
+
+  return rows
+    .filter((row) => row.launcher?.latitude != null && row.launcher?.longitude != null)
+    .map((row) => ({
+      launcherId: Number(row.launcherId),
+      interceptorTypeId: row.interceptorTypeId,
+      interceptorName: row.interceptorType?.name ?? "",
+      latitude: row.launcher.latitude,
+      longitude: row.launcher.longitude,
+      successRates: row.interceptorType?.estimatedSuccessRate ?? [],
+    }));
+}
 
 /**
  * Estimated accuracy (%) for a given interception, sourced from
@@ -51,7 +91,7 @@ export async function getSucessRate(InterceptionId: number): Promise<number | nu
     }
 
     const entry = interceptorType.estimatedSuccessRate?.find(
-        (r) => r.droneType.toLowerCase() === droneType.name.toLowerCase(),
+        (r) => sameDroneType(r.droneType, droneType.name),
     );
 
     return entry ? entry.successRate * 100 : null;

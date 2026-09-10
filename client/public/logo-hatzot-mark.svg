@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="10 5 220 220" fill="none" role="img" aria-label="חצות">
+  <rect x="10" y="5" width="220" height="220" rx="36" fill="#0d1218" />
+  <path d="m 95,43 a 70,70 0 0 0 0,134" stroke="#f2f3f4" stroke-width="15" stroke-linecap="butt" />
+  <path d="m 145,43 a 70,70 0 0 1 0,134" stroke="#f2f3f4" stroke-width="15" stroke-linecap="butt" />
+  <path d="m 103,26 h 14 v 76 l -14,14 z" fill="#f2f3f4" />
+  <path d="m 120,15 h 15 v 101 l -15,-14 z" fill="#5fa8c6" />
+  <path d="m 133,118 a 13,13 0 0 1 -13,13 13,13 0 0 1 -13,-13 13,13 0 0 1 13,-13 13,13 0 0 1 13,13 z" fill="#5fa8c6" />
+  <path d="m 120,185 -17,-48 h 34 z" fill="#5fa8c6" />
+</svg>

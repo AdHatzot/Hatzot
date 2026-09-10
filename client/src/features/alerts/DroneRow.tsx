@@ -8,7 +8,14 @@ import { CrosshairIcon } from "../../../public/icons/CrosshairIcon";
 // };
 //add note
 
-export function DroneRow({ drone }: { drone: Drone }): JSX.Element {
+interface DroneRowProps {
+  drone: Drone;
+  /** An interceptor is on its way to this drone. */
+  engaged: boolean;
+  onIntercept: () => void;
+}
+
+export function DroneRow({ drone, engaged, onIntercept }: DroneRowProps): JSX.Element {
   return (
     <div
       data-testid={`drone-row-${drone.id}`}
@@ -32,11 +39,14 @@ export function DroneRow({ drone }: { drone: Drone }): JSX.Element {
         </span> */}
 
       <button
-        className="flex items-center gap-1.5 text-xs text-text-dim hover:text-text"
-        onClick={() => alert("צריך לכתוב קוד כדי שזה יעבוד :(")}
+        type="button"
+        data-testid={`drone-intercept-${drone.id}`}
+        disabled={engaged}
+        className="flex items-center gap-1.5 text-xs text-text-dim hover:text-text disabled:cursor-default disabled:text-team-red"
+        onClick={onIntercept}
       >
-        <CrosshairIcon className="h-3.5 w-3.5" />
-        יירט
+        <CrosshairIcon className={`h-3.5 w-3.5 ${engaged ? "animate-pulse" : ""}`} />
+        {engaged ? "ביירוט…" : "יירט"}
       </button>
     </div>
   );
