@@ -17,10 +17,6 @@ import type {
   Polygon,
 } from "geojson";
 import type { Location } from "../types";
-import {
-  getSirenAlertsService,
-  getThreatenedAlertsService,
-} from "../services/alerts.service";
 type CityPolygon = Feature<Polygon | MultiPolygon, GeoJsonProperties>;
 
 type IntersectingZonesBody = {
@@ -37,36 +33,6 @@ type AlertableZonesBody = {
   velocity: number;
 };
 
-export const getSirenAlertsController = async (req: Request, res: Response) => {
-  try {
-    const alerts = await getSirenAlertsService();
-
-    return res.status(200).json(alerts);
-  } catch (error) {
-    console.error("GET SIREN ALERTS ERROR:", error);
-
-    return res.status(500).json({
-      message: "Internal server error",
-    });
-  }
-};
-
-export const getThreatenedAlertsController = async (
-  req: Request,
-  res: Response,
-) => {
-  try {
-    const alerts = await getThreatenedAlertsService();
-
-    return res.status(200).json(alerts);
-  } catch (error) {
-    console.error("GET THREATENED ALERTS ERROR:", error);
-
-    return res.status(500).json({
-      message: "Internal server error",
-    });
-  }
-};
 
 export async function getStatus(_req: Request, res: Response): Promise<void> {
   res.json(await alertsService.getStatus());

@@ -26,20 +26,27 @@ import type {
   MultiPolygon,
   Polygon,
 } from "geojson";
-
-import {
-  getSirenAlerts,
-  getThreatenedAlerts,
-} from "../repositories/alerts.repository";
+import cities from "../db/assets/cities/CITIES.geojson";
 
 const DEFAULT_PREDICTION_WINDOW_SECONDS = 60;
 
-export const getSirenAlertsService = async (): Promise<string[]> => {
-  return await getSirenAlerts();
-};
 
-export const getThreatenedAlertsService = async (): Promise<string[]> => {
-  return await getThreatenedAlerts();
+export const getAlertsService = async () => {
+  const alerts = await getAlerts();
+
+  return alerts.map((alert) => {
+    const cityId = Number(alert.split(":")[1]);
+
+    const city = cities.features.find(
+      (feature) => feature.properties.CITY_ID === cityId,
+    );
+
+    return {
+      id: cityId,
+      name: city?.properties.CITY_NAME,
+      time: city?.properties.HEB_TIME,
+    };
+  });
 };
 
 export async function getCityZones(

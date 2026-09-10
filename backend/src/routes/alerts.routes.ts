@@ -10,10 +10,7 @@
 import { Router } from "express";
 import * as alerts from "../controllers/alerts.controller";
 import { asyncHandler } from "../shared/asyncHandler";
-import {
-  getSirenAlertsController,
-  getThreatenedAlertsController,
-} from "../controllers/alerts.controller";
+
 
 export const alertsRoutes: Router = Router();
 
@@ -28,5 +25,4 @@ alertsRoutes.post(
   asyncHandler(alerts.getAlertableCityZones),
 );
 
-alertsRoutes.get("/siren", getSirenAlertsController);
-alertsRoutes.get("/threatened", getThreatenedAlertsController);
+
