@@ -70,3 +70,11 @@ export async function getLiveDeployments(
     res.status(500).json({ message: "Error retrieving launcher data", error });
   }
 }
+
+export async function getAllLauncherTypes(_req: Request, res: Response): Promise<void> {
+  res.json(await logisticsService.getAllLauncherTypes());
+}
+
+export async function getAllInterceptorTypes(_req: Request, res: Response): Promise<void> {
+  res.json(await logisticsService.getAllInterceptorTypes());
+}
