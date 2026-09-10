@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import type { CsvRow } from "./types";
 import { getLauncherTypeIcon } from "./LauncherIcons";
 
@@ -7,10 +7,10 @@ const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 
 /** Shape of the location.state passed from NewDeploymentButton after creation */
 interface DeploymentVerifyState {
-  deploymentId: number;
-  deploymentName: string;
-  rows: CsvRow[];
-  fileName: string;
+  deploymentId?: number;
+  deploymentName?: string;
+  rows?: CsvRow[];
+  fileName?: string;
 }
 
 interface LauncherTypeFromApi {
@@ -28,26 +28,98 @@ interface LauncherTypeSummary {
 export function DeploymentVerifyPage(): JSX.Element {
   const location = useLocation();
   const navigate = useNavigate();
+  const { id: paramId } = useParams<{ id: string }>();
   const state = location.state as DeploymentVerifyState | null;
 
-  // If no state (e.g. direct URL navigation), redirect back
-  useEffect(() => {
-    if (!state) {
-      navigate("/logistics", { replace: true });
-    }
-  }, [state, navigate]);
+  const deploymentId = state?.deploymentId ?? (paramId ? Number(paramId) : null);
 
-  const deploymentName = state?.deploymentName ?? "";
-  const initialRows = state?.rows ?? [];
-  const currentFileName = state?.fileName ?? "";
-
+  const [deploymentName, setDeploymentName] = useState(state?.deploymentName ?? "");
+  const [currentFileName, setCurrentFileName] = useState(state?.fileName ?? "");
   const [isEditingName, setIsEditingName] = useState(false);
-  const [editableName, setEditableName] = useState(deploymentName);
-  const [editableRows, setEditableRows] = useState<CsvRow[]>(initialRows);
+  const [editableName, setEditableName] = useState(state?.deploymentName ?? "");
+  const [editableRows, setEditableRows] = useState<CsvRow[]>(state?.rows ?? []);
   const [rowsHistory, setRowsHistory] = useState<CsvRow[][]>([]);
   const [mapSearch, setMapSearch] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [isLoadingDeployment, setIsLoadingDeployment] = useState(false);
+
+  // If no deploymentId, redirect back
+  useEffect(() => {
+    if (!deploymentId) {
+      navigate("/logistics", { replace: true });
+      return;
+    }
+
+    if (state?.rows && state.rows.length > 0 && state.deploymentName) {
+      return;
+    }
+
+    let isMounted = true;
+    async function loadDeployment() {
+      setIsLoadingDeployment(true);
+      try {
+        const [depRes, launchersRes] = await Promise.all([
+          fetch(`${API_URL}/api/logistics/deployments/${deploymentId}`),
+          fetch(`${API_URL}/api/logistics/launchers?id=${deploymentId}`),
+        ]);
+
+        if (!depRes.ok) {
+          throw new Error("לא ניתן למצוא את הפריסה");
+        }
+
+        const depData = await depRes.json();
+        const launchersData = launchersRes.ok ? await launchersRes.json() : [];
+
+        if (isMounted) {
+          const name = depData.name ?? `פריסה ${deploymentId}`;
+          setDeploymentName(name);
+          setEditableName(name);
+          setCurrentFileName(state?.fileName || `${name}.csv`);
+
+          if (Array.isArray(launchersData) && launchersData.length > 0) {
+            const mappedRows: CsvRow[] = launchersData.map((l: any) => ({
+              id: l.id ? String(l.id) : "",
+              launcher_type_name: String(l.name || ""),
+              longitude: String(l.location?.long ?? 0),
+              latitude: String(l.location?.lat ?? 0),
+              asl: "0",
+              agl: "0",
+              amount: String(
+                Array.isArray(l.interceptors)
+                  ? l.interceptors.reduce((sum: number, item: any) => sum + (Number(item.amount) || 0), 0)
+                  : 0
+              ),
+            }));
+            setEditableRows(mappedRows);
+          } else if (Array.isArray(depData.launchers) && depData.launchers.length > 0) {
+            const mappedRows: CsvRow[] = depData.launchers.map((l: any) => ({
+              id: l.id ? String(l.id) : "",
+              launcher_type_name: String(l.name || "ShieldNest-Lite"),
+              longitude: String(l.location?.longitude ?? 0),
+              latitude: String(l.location?.latitude ?? 0),
+              asl: String(l.location?.asl ?? 0),
+              agl: String(l.location?.agl ?? 0),
+              amount: String(l.ammunitionAmount ?? 0),
+            }));
+            setEditableRows(mappedRows);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load deployment:", err);
+      } finally {
+        if (isMounted) {
+          setIsLoadingDeployment(false);
+        }
+      }
+    }
+
+    void loadDeployment();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [deploymentId, state, navigate]);
 
   // Compute number of unsaved changes (name changed + any row modifications)
   const unsavedChangesCount =
@@ -78,7 +150,7 @@ export function DeploymentVerifyPage(): JSX.Element {
    * via PATCH /api/logistics/deployments/:id and returns to /logistics
    */
   const handleSaveDeployment = async () => {
-    if (!state?.deploymentId) {
+    if (!deploymentId) {
       navigate("/logistics");
       return;
     }
@@ -115,7 +187,7 @@ export function DeploymentVerifyPage(): JSX.Element {
       }
 
       const response = await fetch(
-        `${API_URL}/api/logistics/deployments/${state.deploymentId}`,
+        `${API_URL}/api/logistics/deployments/${deploymentId}`,
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },

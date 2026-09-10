@@ -64,7 +64,14 @@ export async function getAllInterceptorTypes(): Promise<Array<InterceptorType>> 
 }
 
 export async function getAllDeployments(): Promise<Array<Deployment>> {
-  return await logisticsDeploymentRepository.find();
+  return await logisticsDeploymentRepository.find({
+    relations: {
+      liveLaunchers: true,
+    },
+    order: {
+      id: "ASC",
+    },
+  });
 }
 
 export async function getDeploymentById(deploymentId: number) {
@@ -140,7 +147,9 @@ export async function getRealDeployment(): Promise<Deployment | null> {
       status: DeploymentStatus.REAL, // Or "REAL" / DeploymentStatus.LIVE based on your enum
     },
     relations: {
-      liveLaunchers: true, // Optional: includes associated launchers
+      liveLaunchers: {
+        launcherType: true,
+      },
     },
   });
 
