@@ -157,3 +157,44 @@ export async function getLauncherById(launcherId: string | number) {
 export async function getAllDeployments(): Promise<Array<Deployment>> {
   return await logisticsDeploymentRepository.find();
 }
+
+export async function getDeploymentById(deploymentId: number) {
+  const deployment = await logisticsDeploymentRepository.findOne({
+    where: {
+      id: deploymentId,
+    },
+    relations: {
+      liveLaunchers: {
+        launcherAmmunitions: true,
+      },
+    },
+  });
+
+  if (!deployment) {
+    return null;
+  }
+
+  return {
+    id: deployment.id,
+    name: deployment.name,
+    status: deployment.status,
+    launchers: (deployment.liveLaunchers || []).map((launcher) => {
+      const totalAmmunition = (launcher.launcherAmmunitions || []).reduce(
+        (sum, ammo) => sum + (ammo.quantity || 0),
+        0
+      );
+
+      return {
+        id: launcher.id,
+        active: launcher.active,
+        location: {
+          latitude: launcher.latitude,
+          longitude: launcher.longitude,
+          asl: launcher.asl,
+          agl: launcher.agl,
+        },
+        ammunitionAmount: totalAmmunition,
+      };
+    }),
+  };
+}

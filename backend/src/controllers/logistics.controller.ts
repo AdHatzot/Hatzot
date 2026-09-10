@@ -92,3 +92,25 @@ export async function getLauncherById(req: Request<{ id: string }>, res: Respons
 export async function getAllDeployments(_req: Request, res: Response): Promise<void> {
   res.json(await logisticsService.getAllDeployments());
 }
+
+export async function getDeploymentById(req: Request, res: Response): Promise<void> {
+  try {
+    const rawId = Number(req.params.id);
+
+    if (!Number.isInteger(rawId) || rawId < 1) {
+      res.status(400).json({ error: "deployment id must be a positive integer" });
+      return;
+    }
+
+    const deployment = await logisticsService.getDeploymentById(rawId);
+
+    if (!deployment) {
+      res.status(404).json({ error: `Deployment with ID ${rawId} not found` });
+      return;
+    }
+
+    res.json(deployment);
+  } catch (error) {
+    res.status(500).json({ message: "Error retrieving deployment details", error });
+  }
+}
