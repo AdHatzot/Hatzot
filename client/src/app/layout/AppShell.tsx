@@ -14,8 +14,8 @@ import { MapShell } from "@/map/MapShell";
 export function AppShell(): JSX.Element {
   const { pathname } = useLocation();
   const isOps = pathname === "/";
-  // The debrief page (/logs) is full width — no ops sidebars or ticker around it.
-  const showOpsChrome = !pathname.startsWith("/logs");
+  // The ops sidebars and ticker should only appear on the "חמ״ל" tab (isOps).
+  const showOpsChrome = isOps;
 
   return (
     <div className="flex h-full w-full flex-col overflow-hidden bg-bg text-text">
