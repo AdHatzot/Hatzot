@@ -49,7 +49,7 @@ export async function getAll() {
 }
 
 export async function getLiveDeployments(
-  deploymentId: number
+  deploymentId?: number
 ): Promise<
   Array<{
     deployment: unknown;
@@ -63,11 +63,13 @@ export async function getLiveDeployments(
     ammunitionAmount: number;
   }>
 > {
+  const targetDeploymentId = deploymentId ?? 1;
+
   const results = await logisticsLiveLauncherRepository
     .createQueryBuilder("launcher")
     .innerJoinAndSelect("launcher.deployment", "deployment")
     .leftJoin("launcher.launcherAmmunitions", "ammunition")
-    .where("deployment.id = :deploymentId", { deploymentId })
+    .where("deployment.id = :deploymentId", { deploymentId: targetDeploymentId })
     .select([
       "deployment.id",
       "deployment.name",
@@ -77,7 +79,6 @@ export async function getLiveDeployments(
       "launcher.longitude",
       "launcher.asl",
       "launcher.agl",
-      // Sum the total ammunition quantity for this launcher
       "COALESCE(SUM(ammunition.quantity), 0) AS total_ammunition_quantity",
     ])
     .groupBy("launcher.id")
@@ -93,6 +94,6 @@ export async function getLiveDeployments(
       asl: entity.asl,
       agl: entity.agl,
     },
-    ammunitionAmount: Number(results.raw[index]?.total_ammunition_quantity ?? 0),
+    ammunitionAmount: Number(results.raw[index].total_ammunition_quantity),
   }));
 }
