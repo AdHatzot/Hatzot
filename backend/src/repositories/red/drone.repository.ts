@@ -1,4 +1,4 @@
-import { Repository } from "typeorm";
+import { In, Repository } from "typeorm";
 import { dataSource } from "../../db/data-source";
 import { Drone } from "../../db/entities/red/drone.entity";
 import { DroneType } from "../../db/entities/red/drone-type.entity";
@@ -14,8 +14,10 @@ export const dronePositionRepository: Repository<DronePosition> =
   dataSource.getRepository<DronePosition>("DronePosition");
 
 export async function getAllDrones(): Promise<Drone[]> {
+  // Type only — positions are a growing track history, not something to
+  // attach to every drone ever seen.
   return await droneRepository.find({
-    relations: { droneType: true, position: true },
+    relations: { droneType: true },
   });
 }
 
@@ -43,7 +45,6 @@ export async function saveDrones(drones: Drone[]): Promise<void> {
   // Find existing drones by droneId
   const existing = await droneRepository.find({
     where: droneIds.map((id) => ({ droneId: id })),
-    relations: { position: true },
   });
 
   const existingMap = new Map(existing.map((d) => [d.droneId, d.id]));
@@ -56,4 +57,35 @@ export async function saveDrones(drones: Drone[]): Promise<void> {
   }
 
   await droneRepository.save(drones);
+}
+
+/**
+ * DB ids for these drone_ids only. Where older duplicate rows exist for one
+ * drone_id, the oldest row wins, so every pull maps a drone to the same row.
+ */
+export async function findDroneIds(droneIds: string[]): Promise<Map<string, number>> {
+  const ids = new Map<string, number>();
+  if (droneIds.length === 0) return ids;
+
+  const rows = await droneRepository.find({
+    select: { id: true, droneId: true },
+    where: { droneId: In(droneIds) },
+    order: { id: "ASC" },
+  });
+  for (const row of rows) {
+    if (!ids.has(row.droneId)) ids.set(row.droneId, row.id);
+  }
+  return ids;
+}
+
+/** Insert drones that are not in the DB yet, in one statement. */
+export async function insertDrones(drones: Drone[]): Promise<void> {
+  if (drones.length === 0) return;
+  await droneRepository.insert(drones);
+}
+
+/** Append one track point per drone — history for route calculation. */
+export async function appendPositions(positions: DronePosition[]): Promise<void> {
+  if (positions.length === 0) return;
+  await dronePositionRepository.insert(positions);
 }

@@ -2,7 +2,7 @@
  * @team     red
  * @owner    red-lead
  * @public   yes
- * @updated  2026-09-09
+ * @updated  2026-09-10
  */
 import {
   Entity,
@@ -10,7 +10,7 @@ import {
   Column,
   ManyToOne,
   JoinColumn,
-  OneToOne,
+  OneToMany,
 } from "typeorm";
 import { DroneType } from "./drone-type.entity";
 import { DronePosition } from "./drone-position.entity";
@@ -27,10 +27,9 @@ export class Drone {
   @JoinColumn({ name: "drone_type_id" })
   droneType!: DroneType;
 
-  @OneToOne(() => DronePosition, (position) => position.drone, {
-    cascade: ["insert", "update"],
-  })
-  position?: DronePosition;
+  /** Track history, one row per pull. Never load it for the whole table. */
+  @OneToMany(() => DronePosition, (position) => position.drone)
+  positions?: DronePosition[];
 
   @Column({ type: "numeric" })
   heading!: string;

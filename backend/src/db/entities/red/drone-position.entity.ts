@@ -2,12 +2,15 @@
  * @team     red
  * @owner    red-lead
  * @public   yes
- * @updated  2026-09-09
+ * @updated  2026-09-10
+ *
+ * One row per drone per pull of the feed — the track history route
+ * calculation reads. A drone has many of these, newest by recorded_at.
  */
 import {
   Entity,
   Column,
-  OneToOne,
+  ManyToOne,
   JoinColumn,
   PrimaryGeneratedColumn,
 } from "typeorm";
@@ -18,7 +21,7 @@ export class DronePosition {
   @PrimaryGeneratedColumn({ type: "bigint" })
   id!: number;
 
-  @OneToOne(() => Drone, (drone) => drone.position)
+  @ManyToOne(() => Drone, (drone) => drone.positions, { nullable: false })
   @JoinColumn({ name: "drone_id" })
   drone!: Drone;
 
