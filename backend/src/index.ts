@@ -20,6 +20,7 @@ import { alertsRoutes } from "./routes/alerts.routes";
 import { logisticsRoutes } from "./routes/logistics.routes";
 import { loopRoutes } from "./routes/loop.routes";
 import { startBlueReloadTicker } from "./services/blue.service";
+import { interceptionsRoutes } from "./routes/interceptions.routes";
 import { errorHandler } from "./shared/errorHandler";
 import { startRedFetchDronesJob } from "./services/red.service";
 
@@ -39,6 +40,7 @@ app.use("/api/blue", blueRoutes);
 app.use("/api/alerts", alertsRoutes);
 app.use("/api/logistics", logisticsRoutes);
 app.use("/api/loop", loopRoutes);
+app.use("/api/interceptions", interceptionsRoutes);
 
 // Rejections from asyncHandler land here — JSON, never Express's HTML page.
 app.use(errorHandler);
