@@ -15,3 +15,5 @@ export const redLayer: TeamMapLayer = {
   defaultVisible: true,
   mount: mountRedLayer,
 };
+
+export * from "./DronesContext"
