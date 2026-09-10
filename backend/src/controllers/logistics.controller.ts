@@ -9,11 +9,58 @@
  */
 import type { Request, Response } from "express";
 import * as logisticsService from "../services/logistics.service";
+import { HttpError } from "../shared/httpError";
 
 export async function getStatus(_req: Request, res: Response): Promise<void> {
   res.json(await logisticsService.getStatus());
 }
 
+export async function fireIntercept(
+  req: Request,
+  res: Response,
+): Promise<void> {
+  const body = req.body as {
+    launcher_id?: unknown;
+    interceptor_type_id?: unknown;
+  };
+  const launcherId = body?.launcher_id;
+  const interceptorTypeId = body?.interceptor_type_id;
+
+  if (
+    typeof launcherId !== "number" ||
+    !Number.isSafeInteger(launcherId) ||
+    launcherId < 1 ||
+    typeof interceptorTypeId !== "number" ||
+    !Number.isSafeInteger(interceptorTypeId) ||
+    interceptorTypeId < 1
+  ) {
+    throw new HttpError(
+      400,
+      "launcher_id and interceptor_type_id must be positive integers",
+    );
+  }
+
+  res.json(
+    await logisticsService.fireIntercept({
+      launcherId,
+      interceptorTypeId,
+    }),
+  );
+}
+
 export async function getAll(_req: Request, res: Response): Promise<void> {
   res.json(await logisticsService.getAll());
+}
+
+export async function getLiveDeployments(
+  req: Request<{ id: string }>,
+  res: Response,
+): Promise<void> {
+  const deploymentId = Number(req.params.id);
+  if (!Number.isInteger(deploymentId) || deploymentId < 1) {
+    res.status(400).json({ error: "deployment id must be a positive integer" });
+    return;
+  }
+
+  res.json(await logisticsService.getLiveDeployments(deploymentId));
 }

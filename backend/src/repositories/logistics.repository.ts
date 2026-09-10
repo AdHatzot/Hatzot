@@ -15,10 +15,23 @@
  */
 
 // import { createRepository, type Repository } from "../db";
-import { Deployment } from "../db/entities/logistics.entity";
+import { Deployment } from "../db/entities/deployment.entity";
 import { dataSource } from "../db/data-source";
-import { LiveLauncher } from "../db/entities/liveLauncher.entity";
 import { LauncherData } from "../utils/LiveLauncherTypes";
+import { LauncherAmmunition } from "../db/entities/launcherAmmunition.entity";
+import { LiveLauncher } from "../db/entities/liveLauncher.entity";
+import { HttpError } from "../shared/httpError";
+
+export interface FireInterceptRequest {
+  launcherId: number;
+  interceptorTypeId: number;
+}
+
+export interface FireInterceptResult {
+  launcherId: string;
+  interceptorTypeId: number;
+  reloadTimeS: number;
+}
 
 export const logisticsDeploymentRepository =
   dataSource.getRepository(Deployment);
@@ -35,14 +48,12 @@ const getLunchersFromDb = async (): Promise<LiveLauncher[]> => {
     .getMany();
 };
 
-const getLauncherFromDb = async (id: string): Promise<LiveLauncher | null>  => {
-    return logisticsLiveLauncherRepository.createQueryBuilder("launcher")
+const getLauncherFromDb = async (id: string): Promise<LiveLauncher | null> => {
+  return logisticsLiveLauncherRepository
+    .createQueryBuilder("launcher")
     .leftJoinAndSelect("launcher.launcherType", "launcherType")
     .leftJoinAndSelect("launcher.ammunition", "ammunition")
-    .leftJoinAndSelect(
-      "ammunition.interceptorType",
-      "interceptorType",
-    )
+    .leftJoinAndSelect("ammunition.interceptorType", "interceptorType")
     .where("launcher.id = :id", { id })
     .andWhere("launcher.active = :active", { active: true })
     .getOne();
@@ -65,19 +76,70 @@ const mapLauncher = (launcher: LiveLauncher): LauncherData => {
 };
 
 const getAllLaunchers = async (): Promise<LauncherData[]> => {
-    const launchers = await getLunchersFromDb();
+  const launchers = await getLunchersFromDb();
 
-    return launchers.map(mapLauncher);
+  return launchers.map(mapLauncher);
 };
 
 const getLauncherById = async (id: string): Promise<LauncherData | null> => {
-    const launcher = await getLauncherFromDb(id);
+  const launcher = await getLauncherFromDb(id);
 
-    if(!launcher) {
-        return null;
-    }
+  if (!launcher) {
+    return null;
+  }
 
-    return mapLauncher(launcher);
+  return mapLauncher(launcher);
 };
 
-export { getAllLaunchers , getLauncherById }
+export { getAllLaunchers, getLauncherById };
+export async function fireIntercept(
+  request: FireInterceptRequest,
+): Promise<FireInterceptResult> {
+  return dataSource.transaction(async (manager) => {
+    const ammunition = await manager
+      .getRepository(LauncherAmmunition)
+      .createQueryBuilder("ammunition")
+      .innerJoinAndSelect("ammunition.launcher", "launcher")
+      .innerJoinAndSelect("launcher.launcherType", "launcherType")
+      .where("ammunition.launcher_id = :launcherId", {
+        launcherId: request.launcherId,
+      })
+      .andWhere("ammunition.interceptor_type_id = :interceptorTypeId", {
+        interceptorTypeId: request.interceptorTypeId,
+      })
+      .setLock("pessimistic_write")
+      .getOne();
+
+    if (ammunition === null) {
+      throw new HttpError(404, "No launcher with this interceptor was found");
+    }
+
+    const launcher = ammunition.launcher;
+    if (launcher === undefined) {
+      throw new HttpError(404, "Launcher was not found");
+    }
+
+    if (launcher.launcherType === undefined) {
+      throw new HttpError(404, "Launcher type was not found");
+    }
+
+    if (!launcher.active) {
+      throw new HttpError(409, "Launcher is reloading");
+    }
+
+    if ((ammunition.quantity ?? 0) < 1) {
+      throw new HttpError(409, "Interceptor has no ammunition");
+    }
+
+    ammunition.quantity -= 1;
+    launcher.active = false;
+    await manager.getRepository(LauncherAmmunition).save(ammunition);
+    await manager.getRepository(LiveLauncher).save(launcher);
+
+    return {
+      launcherId: launcher.id,
+      interceptorTypeId: ammunition.interceptorTypeId,
+      reloadTimeS: Number(launcher.launcherType.reloadTimeS ?? 0),
+    };
+  });
+}
