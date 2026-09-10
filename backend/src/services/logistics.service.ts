@@ -49,58 +49,8 @@ export async function fireIntercept(
   };
 }
 
-export async function getAll() {
-  return await logisticsDeploymentRepository.find();
-}
-
-export async function getLiveDeployments(
-  deploymentId?: number
-): Promise<
-  Array<{
-    deployment: unknown;
-    launcherId: string;
-    location: {
-      latitude: number | null;
-      longitude: number | null;
-      asl: number | null;
-      agl: number | null;
-    };
-    ammunitionAmount: number;
-  }>
-> {
-  const targetDeploymentId = deploymentId ?? 1;
-
-  const results = await logisticsLiveLauncherRepository
-    .createQueryBuilder("launcher")
-    .innerJoinAndSelect("launcher.deployment", "deployment")
-    .leftJoin("launcher.launcherAmmunitions", "ammunition")
-    .where("deployment.id = :deploymentId", { deploymentId: targetDeploymentId })
-    .select([
-      "deployment.id",
-      "deployment.name",
-      "deployment.status",
-      "launcher.id",
-      "launcher.latitude",
-      "launcher.longitude",
-      "launcher.asl",
-      "launcher.agl",
-      "COALESCE(SUM(ammunition.quantity), 0) AS total_ammunition_quantity",
-    ])
-    .groupBy("launcher.id")
-    .addGroupBy("deployment.id")
-    .getRawAndEntities();
-
-  return results.entities.map((entity, index) => ({
-    deployment: entity.deployment,
-    launcherId: entity.id,
-    location: {
-      latitude: entity.latitude,
-      longitude: entity.longitude,
-      asl: entity.asl,
-      agl: entity.agl,
-    },
-    ammunitionAmount: Number(results.raw[index].total_ammunition_quantity),
-  }));
+export async function getAllLiveLaunchers(): Promise<Array<LiveLauncher>> {
+  return await logisticsLiveLauncherRepository.find();
 }
 
 export async function getAllLauncherTypes(): Promise<Array<LauncherType>> {

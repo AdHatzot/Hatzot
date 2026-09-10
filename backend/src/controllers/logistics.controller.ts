@@ -49,27 +49,8 @@ export async function fireIntercept(
   );
 }
 
-export async function getAll(_req: Request, res: Response): Promise<void> {
-  res.json(await logisticsService.getAll());
-}
-
-export async function getLiveDeployments(
-  req: Request<{ id: string }>,
-  res: Response,
-): Promise<void> {
-  try {
-    const deploymentId = req.query.id !== undefined ? Number(req.query.id) : 1;
-
-    if (!Number.isInteger(deploymentId) || deploymentId < 1) {
-      res.status(400).json({ error: "deployment id must be a positive integer" });
-      return;
-    }
-
-    const data = await logisticsService.getLiveDeployments(deploymentId);
-    res.json(data);
-  } catch (error) {
-    res.status(500).json({ message: "Error retrieving launcher data", error });
-  }
+export async function getAllLiveLaunchers(_req: Request, res: Response): Promise<void> {
+  res.json(await logisticsService.getAllLiveLaunchers());
 }
 
 export async function getAllLauncherTypes(_req: Request, res: Response): Promise<void> {

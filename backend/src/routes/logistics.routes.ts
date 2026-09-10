@@ -15,10 +15,9 @@ export const logisticsRoutes: Router = Router();
 
 logisticsRoutes.get("/", asyncHandler(logistics.getStatus));
 logisticsRoutes.post("/fire-intercept", asyncHandler(logistics.fireIntercept));
-logisticsRoutes.get("/all", asyncHandler(logistics.getAll));
 logisticsRoutes.get(
   "/launchers",
-  asyncHandler(logistics.getLiveDeployments),
+  asyncHandler(logistics.getAllLiveLaunchers),
 );
 logisticsRoutes.get(
   "/launcher-types",
