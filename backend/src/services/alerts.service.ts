@@ -8,31 +8,27 @@
  * goes through repositories/alerts.repository.ts only; live changes go out
  * via broadcast() from ../ws. No Express types in here.
  */
-import type { Location } from "../types";
-import { getDrones } from "./drones.service";
-import { redis } from "../redis/redis.client";
-import {
-  getAlertStatus as getAlertStatusFromRepository,
-  type AlertStatus,
-} from "../repositories/alerts.repository";
-import { readFile } from "fs/promises";
 import booleanIntersects from "@turf/boolean-intersects";
-import booleanPointInPolygon from "@turf/boolean-point-in-polygon";
 import destination from "@turf/destination";
-import distance from "@turf/distance";
 import { lineString, point } from "@turf/helpers";
-import nearestPointOnLine from "@turf/nearest-point-on-line";
-import polygonToLine from "@turf/polygon-to-line";
+import { pointToPolygonDistance } from "@turf/turf";
+import { readFile } from "fs/promises";
 import type {
-  Feature,
-  FeatureCollection,
-  GeoJsonProperties,
-  Geometry,
-  MultiPolygon,
-  Polygon,
+    Feature,
+    FeatureCollection,
+    GeoJsonProperties,
+    Geometry,
+    MultiPolygon,
+    Polygon,
 } from "geojson";
 import path from "path";
-import { pointToPolygonDistance } from "@turf/turf";
+import { redis } from "../redis/redis.client";
+import {
+    getAlertStatus as getAlertStatusFromRepository,
+    type AlertStatus,
+} from "../repositories/alerts.repository";
+import type { Location } from "../types";
+import { getDrones } from "./drones.service";
 
 const CITIES_GEOJSON_PATH =
   process.env.CITIES_GEOJSON ??
