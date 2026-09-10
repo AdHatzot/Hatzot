@@ -56,6 +56,29 @@ export interface CreateDeploymentResult {
   launchers: LiveLauncher[];
 }
 
+export interface UpdateDeploymentRow {
+  id?: string;
+  launcher_type_name?: string;
+  longitude?: number;
+  latitude?: number;
+  asl?: number;
+  agl?: number;
+  amount?: number;
+  active?: boolean;
+}
+
+export interface UpdateDeploymentRequest {
+  name?: string;
+  rows?: UpdateDeploymentRow[];
+}
+
+export interface UpdateDeploymentResult {
+  deploymentId: number;
+  deploymentName: string;
+  deployment: Deployment;
+  launchers: LiveLauncher[];
+}
+
 export const logisticsDeploymentRepository =
   dataSource.getRepository(Deployment);
 
@@ -68,13 +91,13 @@ export const logisticsLauncherTypeRepository =
 export const logisticsInterceptorTypeRepository =
   dataSource.getRepository(InterceptorType);
 
-export const getLunchersFromDb = async (): Promise<LiveLauncher[]> => {
+export const getLaunchersFromDb = async (deploymentId: number): Promise<LiveLauncher[]> => {
   return logisticsLiveLauncherRepository
     .createQueryBuilder("launcher")
     .leftJoinAndSelect("launcher.launcherType", "launcherType")
     .leftJoinAndSelect("launcher.launcherAmmunitions", "ammunition")
     .leftJoinAndSelect("ammunition.interceptorType", "interceptorType")
-    .where("launcher.active = :active", { active: true })
+    .where("launcher.deployment_id = :deploymentId", { deploymentId })
     .getMany();
 };
 
@@ -153,6 +176,71 @@ export async function createDeployment(
       deployment: savedDeployment,
       launchersCreated: savedLaunchers.length,
       launchers: savedLaunchers,
+    };
+  });
+}
+
+export async function updateDeployment(
+  deploymentId: number,
+  request: UpdateDeploymentRequest,
+): Promise<UpdateDeploymentResult> {
+  return dataSource.transaction(async (manager) => {
+    const deploymentRepo = manager.getRepository(Deployment);
+    const deployment = await deploymentRepo.findOne({
+      where: { id: deploymentId },
+    });
+
+    if (!deployment) {
+      throw new HttpError(404, `Deployment with id ${deploymentId} was not found`);
+    }
+
+    if (request.name !== undefined && request.name.trim().length > 0) {
+      deployment.name = request.name.trim();
+      await deploymentRepo.save(deployment);
+    }
+
+    const liveLauncherRepo = manager.getRepository(LiveLauncher);
+
+    if (Array.isArray(request.rows) && request.rows.length > 0) {
+      const launcherTypeRepo = manager.getRepository(LauncherType);
+      const allLauncherTypes = await launcherTypeRepo.find();
+      const typeNameToId = new Map(
+        allLauncherTypes.map((lt) => [lt.name.toLowerCase(), lt.id]),
+      );
+
+      for (const row of request.rows) {
+        if (row.id) {
+          const existing = await liveLauncherRepo.findOne({
+            where: { id: row.id, deploymentId },
+          });
+          if (existing) {
+            if (row.launcher_type_name) {
+              const typeId = typeNameToId.get(row.launcher_type_name.toLowerCase());
+              if (typeId) existing.launcherTypeId = typeId;
+            }
+            if (row.longitude !== undefined) existing.longitude = row.longitude;
+            if (row.latitude !== undefined) existing.latitude = row.latitude;
+            if (row.asl !== undefined) existing.asl = row.asl;
+            if (row.agl !== undefined) existing.agl = row.agl;
+            if (row.amount !== undefined) existing.amount = row.amount;
+            if (row.active !== undefined) existing.active = row.active;
+            await liveLauncherRepo.save(existing);
+          }
+        }
+      }
+    }
+
+    const launchers = await liveLauncherRepo.find({
+      where: { deploymentId },
+      relations: { launcherType: true },
+      order: { id: "ASC" },
+    });
+
+    return {
+      deploymentId: deployment.id,
+      deploymentName: deployment.name,
+      deployment,
+      launchers,
     };
   });
 }

@@ -10,12 +10,11 @@
 import type { Request, Response } from "express";
 import * as logisticsService from "../services/logistics.service";
 import { HttpError } from "../shared/httpError";
+import { DeploymentStatus } from "../db/entities/deployment.entity";
 
-export const getAllLaunchers = async (
-  _req: Request,
-  res: Response,
-): Promise<void> => {
-  const launchers = await logisticsService.getAllLaunchers();
+export const getAllLaunchers = async (req: Request<{ id: string }>, res: Response) => {
+  const deploymentId = Number(req.query.id);
+  const launchers = await logisticsService.getAllLaunchers(deploymentId);
 
   res.status(200).json(launchers);
 };
@@ -79,29 +78,9 @@ export async function fireIntercept(
     );
 }
 
-export async function getAll(_req: Request, res: Response): Promise<void> {
-  res.json(await logisticsService.getAll());
-}
-
-export async function getLiveDeployments(
-  req: Request<{ id: string }>,
-  res: Response,
-): Promise<void> {
-  try {
-    const deploymentId = req.query.id !== undefined ? Number(req.query.id) : 1;
-
-    if (!Number.isInteger(deploymentId) || deploymentId < 1) {
-      res
-        .status(400)
-        .json({ error: "deployment id must be a positive integer" });
-      return;
-    }
-
-    const data = await logisticsService.getLiveDeployments(deploymentId);
-    res.json(data);
-  } catch (error) {
-    res.status(500).json({ message: "Error retrieving launcher data", error });
-  }
+export async function getAllLiveLaunchers(req: Request, res: Response): Promise<void> {
+  const deploymentId = Number(req.query.id);
+  res.json(await logisticsService.getLiveLaunchersByDeploymentId(deploymentId));
 }
 
 export async function getAllLauncherTypes(
@@ -116,6 +95,91 @@ export async function getAllInterceptorTypes(
   res: Response,
 ): Promise<void> {
   res.json(await logisticsService.getAllInterceptorTypes());
+}
+
+export async function getLiveLauncherByDeploymentId(req: Request<{ id: string }>, res: Response): Promise<void> {
+  const deploymentId = Number(req.query.id);
+  const launchers = await logisticsService.getLiveLaunchersByDeploymentId(deploymentId);
+  if (!launchers) {
+    res.status(404).json({ error: "Launcher not found" });
+    return;
+  }
+  res.json(launchers);
+}
+
+export async function getAllDeployments(_req: Request, res: Response): Promise<void> {
+  res.json(await logisticsService.getAllDeployments());
+}
+
+export async function getDeploymentById(req: Request, res: Response): Promise<void> {
+  try {
+    const rawId = Number(req.params.id);
+
+    if (!Number.isInteger(rawId) || rawId < 1) {
+      res.status(400).json({ error: "deployment id must be a positive integer" });
+      return;
+    }
+
+    const deployment = await logisticsService.getDeploymentById(rawId);
+
+    if (!deployment) {
+      res.status(404).json({ error: `Deployment with ID ${rawId} not found` });
+      return;
+    }
+
+    res.json(deployment);
+  } catch (error) {
+    res.status(500).json({ message: "Error retrieving deployment details", error });
+  }
+}
+
+export async function updateDeploymentStatusController(
+  req: Request,
+  res: Response
+): Promise<void> {
+  try {
+    const { id, status } = req.body;
+    const deploymentId = Number(id);
+
+    // Validate ID
+    if (!Number.isInteger(deploymentId) || deploymentId < 1) {
+      res.status(400).json({ error: "deployment id must be a positive integer" });
+      return;
+    }
+
+    // Validate Status
+    if (!status || !Object.values(DeploymentStatus).includes(status)) {
+      res.status(400).json({
+        error: `status is required and must be one of: ${Object.values(DeploymentStatus).join(", ")}`,
+      });
+      return;
+    }
+
+    const updatedDeployment = await logisticsService.updateDeploymentStatus(deploymentId, status as DeploymentStatus);
+    res.json(updatedDeployment);
+
+  } catch (error: any) {
+    if (error.message?.startsWith("NOT_FOUND")) {
+      res.status(404).json({ error: error.message.replace("NOT_FOUND: ", "") });
+      return;
+    }
+    res.status(500).json({ message: "Error updating deployment status", error: error.message });
+  }
+}
+
+export async function getRealDeployment(_req: Request, res: Response): Promise<void> {
+  try {
+    const deployment = await logisticsService.getRealDeployment();
+
+    if (!deployment) {
+      res.status(404).json({ error: "No active real deployment found" });
+      return;
+    }
+
+    res.json(deployment);
+  } catch (error: any) {
+    res.status(500).json({ message: "Error fetching real deployment", error: error.message });
+  }
 }
 
 export async function createDeployment(
@@ -177,7 +241,79 @@ export async function createDeployment(
     rows: parsedRows,
   });
 
-  res.status(201).json(result);
+  res.status(201).json({
+    id: result.deploymentId,
+    ...result,
+  });
+}
+
+export async function updateDeployment(
+  req: Request<{ id: string }>,
+  res: Response,
+): Promise<void> {
+  const deploymentId = Number(req.params.id);
+  if (!Number.isInteger(deploymentId) || deploymentId < 1) {
+    throw new HttpError(400, "deployment id must be a positive integer");
+  }
+
+  const body = req.body as {
+    name?: unknown;
+    rows?: unknown;
+  };
+
+  const updatePayload: {
+    name?: string;
+    rows?: Array<{
+      id?: string;
+      launcher_type_name?: string;
+      longitude?: number;
+      latitude?: number;
+      asl?: number;
+      agl?: number;
+      amount?: number;
+      active?: boolean;
+    }>;
+  } = {};
+
+  if (typeof body?.name === "string") {
+    if (body.name.trim().length === 0) {
+      throw new HttpError(400, "name cannot be empty");
+    }
+    updatePayload.name = body.name.trim();
+  }
+
+  if (Array.isArray(body?.rows)) {
+    updatePayload.rows = body.rows.map((row: Record<string, unknown>) => {
+      const launcherRow: {
+        id?: string;
+        launcher_type_name?: string;
+        longitude?: number;
+        latitude?: number;
+        asl?: number;
+        agl?: number;
+        amount?: number;
+        active?: boolean;
+      } = {};
+
+      if (row.id !== undefined) launcherRow.id = String(row.id);
+      if (typeof row.launcher_type_name === "string") launcherRow.launcher_type_name = row.launcher_type_name.trim();
+      if (row.longitude !== undefined) launcherRow.longitude = Number(row.longitude);
+      if (row.latitude !== undefined) launcherRow.latitude = Number(row.latitude);
+      if (row.asl !== undefined) launcherRow.asl = Number(row.asl);
+      if (row.agl !== undefined) launcherRow.agl = Number(row.agl);
+      if (row.amount !== undefined) launcherRow.amount = Number(row.amount);
+      if (row.active !== undefined) launcherRow.active = Boolean(row.active);
+
+      return launcherRow;
+    });
+  }
+
+  const result = await logisticsService.updateDeployment(
+    deploymentId,
+    updatePayload,
+  );
+
+  res.status(200).json(result);
 }
 
 export const deployment = createDeployment;
