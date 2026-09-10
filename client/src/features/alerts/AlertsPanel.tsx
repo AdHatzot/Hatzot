@@ -1,4 +1,3 @@
-
 /**
  * @team     alerts
  * @owner    alerts-lead
@@ -12,11 +11,56 @@ import { useState } from "react";
 import { Drone } from "@/types/drones";
 
 const DEMO_DRONES: Drone[] = [
-  { id: "d1", name: "רחפן-01", active: true },
-  { id: "d2", name: "רחפן-02", active: true },
-  { id: "d3", name: "רחפן-03", active: true },
-  { id: "d4", name: "רחפן-04", active: true },
-  { id: "d5", name: "רחפן-05", active: true },
+  {
+    type: "quadcopter",
+    id: "drone-alpha-01",
+    timestamp: "2026-09-10T08:30:00.000Z",
+    heading: 45.5,
+    launch_point: {
+      latitude: 32.0853,
+      longitude: 34.7818,
+    },
+  },
+  {
+    type: "fixed-wing",
+    id: "drone-bravo-02",
+    timestamp: "2026-09-10T08:31:15.000Z",
+    heading: 180.0,
+    launch_point: {
+      latitude: 32.0912,
+      longitude: 34.7754,
+    },
+  },
+  {
+    type: "hexacopter",
+    id: "drone-charlie-03",
+    timestamp: "2026-09-10T08:32:45.000Z",
+    heading: 270.2,
+    launch_point: {
+      latitude: 32.0741,
+      longitude: 34.7921,
+    },
+  },
+  {
+    type: "quadcopter",
+    id: "drone-delta-04",
+    timestamp: "2026-09-10T08:33:10.000Z",
+    heading: 12.8,
+    launch_point: {
+      latitude: 32.0628,
+      longitude: 34.7689,
+    },
+  },
+  {
+    type: "vtol",
+    id: "drone-echo-05",
+    timestamp: "2026-09-10T08:35:00.000Z",
+    heading: 315.0,
+    launch_point: {
+      latitude: 32.1005,
+      longitude: 34.8012,
+    },
+  },
 ];
 
 export function AlertsPanel(): JSX.Element {
