@@ -14,3 +14,4 @@ import { asyncHandler } from "../shared/asyncHandler";
 export const redRoutes: Router = Router();
 
 redRoutes.get("/", asyncHandler(red.getStatus));
+redRoutes.get("/drones", asyncHandler(red.getDrones));
