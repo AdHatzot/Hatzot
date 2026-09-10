@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - CLIENT_ORIGIN=http://localhost
+
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+      args:
+        VITE_MAP_TILE_URL: "https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
