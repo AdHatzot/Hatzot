@@ -121,7 +121,7 @@ export function MapShell({ visible }: { visible: boolean }): JSX.Element {
       />
       <LayersPanel open={layersOpen} layers={layers} onToggle={toggle} />
 
-      <MapInfoBar infoItems={DEMO_ITEMS} />
+      {/* <MapInfoBar infoItems={DEMO_ITEMS} /> */}
     </div>
   );
 }
