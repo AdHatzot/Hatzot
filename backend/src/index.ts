@@ -21,6 +21,7 @@ import { logisticsRoutes } from "./routes/logistics.routes";
 import { loopRoutes } from "./routes/loop.routes";
 import { redRoutes } from "./routes/red.routes";
 import { startDroneAlertsTicker } from "./services/alerts.service";
+import { startRedFetchDronesJob } from "./services/red.service";
 import { startBlueReloadTicker } from "./services/blue.service";
 import { attachHub } from "./ws";
 
@@ -59,6 +60,7 @@ async function main(): Promise<void> {
   attachHub(server);
   startBlueReloadTicker();
   startDroneAlertsTicker();
+  startRedFetchDronesJob();
   server.listen(PORT, () => {
     console.log(
       `c2-backend  http://localhost:${PORT}  ws://localhost:${PORT}/ws`,
