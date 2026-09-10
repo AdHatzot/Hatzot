@@ -2,7 +2,7 @@
  * @team     ops
  * @owner    ops-lead
  * @public   no
- * @updated  2026-09-08
+ * @updated  2026-09-10
  */
 import { Outlet, useLocation } from "react-router-dom";
 import { NavBar } from "./NavBar";
@@ -14,19 +14,21 @@ import { MapShell } from "@/map/MapShell";
 export function AppShell(): JSX.Element {
   const { pathname } = useLocation();
   const isOps = pathname === "/";
+  // The debrief page (/logs) is full width — no ops sidebars or ticker around it.
+  const showOpsChrome = !pathname.startsWith("/logs");
 
   return (
     <div className="flex h-full w-full flex-col overflow-hidden bg-bg text-text">
       <NavBar />
       <div className="flex min-h-0 flex-1">
-        <SidebarStart />
+        {showOpsChrome && <SidebarStart />}
         <main className="relative min-w-0 flex-1">
           <MapShell visible={isOps} />
           <Outlet />
         </main>
-        <SidebarEnd />
+        {showOpsChrome && <SidebarEnd />}
       </div>
-      <Ticker />
+      {showOpsChrome && <Ticker />}
     </div>
   );
 }
