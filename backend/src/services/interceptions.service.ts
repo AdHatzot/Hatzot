@@ -43,7 +43,7 @@ export async function createInterception(
 ): Promise<Interception[]> {
   // TODO: replace mockData(drones_id) with a real API call once the endpoint exists,
 
-  // TODO: medium-check if an active interception exists for the given drone_id
+  // TODO: medium-check if an active interception exists for the given drone_id and the result isnt final yet (if it is and you have a MISS then lanch again)
   const interceptionData = mockData(drones_id);
 
   const saves: Partial<Interception>[] = interceptionData.map((data) => ({
@@ -59,7 +59,21 @@ export async function createInterception(
   }));
 
   const saved = await interceptionsRepository.save(saves);
+  /**
+   *  TODO: Used this frontend function with a default darution of 2000ms and the start point which is the lancher and the end point which is the drone it self to animate it wait 2 secs and end opertion.
+   * animateInterception({
+    group,
 
+    start,
+
+    target,
+
+    result: "hit",
+
+    durationMs: 1800,
+  });*/
+
+  // TODO: after the animation remove from the DB connected to the project 1 of the spesific missles we used from the lancher we used
   const updated = await Promise.all(
     saved.map(async (interception) => {
       const didIntercept = await getDidIntercept(interception.id);
@@ -72,6 +86,7 @@ export async function createInterception(
       return interception;
     }),
   );
+  // TODO: delete drone using the red team function that deletes it incase of HIT only - incase of miss just finish the opeation without removing the drone
 
   return await interceptionsRepository.save(updated);
 }
