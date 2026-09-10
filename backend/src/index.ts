@@ -20,6 +20,7 @@ import { alertsRoutes } from "./routes/alerts.routes";
 import { logisticsRoutes } from "./routes/logistics.routes";
 import { loopRoutes } from "./routes/loop.routes";
 import { startBlueReloadTicker } from "./services/blue.service";
+import { startDroneAlertsTicker } from "./services/alerts.service";
 import { redis } from "./redis/redis.client";
 import { startAlertsListener } from "./redis/alerts.listener";
 
@@ -47,7 +48,7 @@ app.use(errorHandler);
 
 async function main(): Promise<void> {
   await initDatabase();
-    // Connect to Redis
+  // Connect to Redis
   await redis.connect();
 
   // Start listening for alert changes
@@ -55,6 +56,7 @@ async function main(): Promise<void> {
   const server = createServer(app);
   attachHub(server);
   startBlueReloadTicker();
+  startDroneAlertsTicker();
   server.listen(PORT, () => {
     console.log(
       `c2-backend  http://localhost:${PORT}  ws://localhost:${PORT}/ws`,

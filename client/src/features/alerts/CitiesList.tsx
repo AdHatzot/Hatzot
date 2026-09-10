@@ -10,8 +10,14 @@ type AlertType = "siren" | "threatened";
 type AlertStatus = {
   type: AlertType;
   cityId: number;
-  cityName?: string;
   timestamp?: number;
+};
+
+type CityFeature = {
+  properties?: {
+    CITY_ID?: number | string;
+    CITY_NAME?: string;
+  };
 };
 
 const POLL_INTERVAL_MS = 2000;
@@ -46,9 +52,6 @@ const normalizeAlertStatus = (value: unknown): AlertStatus | null => {
   return {
     type: entry.type as AlertType,
     cityId,
-    ...(typeof entry.cityName === "string"
-      ? { cityName: entry.cityName }
-      : {}),
     ...(typeof entry.timestamp === "number" && Number.isFinite(entry.timestamp)
       ? { timestamp: entry.timestamp }
       : {}),
@@ -65,9 +68,48 @@ const getMinutesSinceAlert = (timestamp?: number): number | null => {
 
 export function CitiesList(): JSX.Element {
   const [alerts, setAlerts] = useState<AlertStatus[]>([]);
+  const [cityNames, setCityNames] = useState<Record<number, string>>({});
   const [query, setQuery] = useState("");
   const [error, setError] = useState<string | null>(null);
   const apiUrl = import.meta.env.VITE_API_URL ?? "";
+
+  useEffect(() => {
+    let stopped = false;
+
+    const loadCityNames = async (): Promise<void> => {
+      try {
+        const response = await fetch(`${apiUrl}/api/alerts/cities`);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch cities: ${response.status}`);
+        }
+
+        const data: { features?: CityFeature[] } = await response.json();
+        const names = (data.features ?? []).reduce<Record<number, string>>(
+          (result, feature) => {
+            const cityId = Number(feature.properties?.CITY_ID);
+            const cityName = feature.properties?.CITY_NAME;
+            if (Number.isInteger(cityId) && typeof cityName === "string") {
+              result[cityId] = cityName;
+            }
+            return result;
+          },
+          {},
+        );
+
+        if (!stopped) {
+          setCityNames(names);
+        }
+      } catch (requestError) {
+        console.error("Failed to load city names", requestError);
+      }
+    };
+
+    void loadCityNames();
+
+    return () => {
+      stopped = true;
+    };
+  }, [apiUrl]);
 
   useEffect(() => {
     let stopped = false;
@@ -123,9 +165,11 @@ export function CitiesList(): JSX.Element {
     }
 
     return alerts.filter((alert) =>
-      (alert.cityName ?? String(alert.cityId)).includes(normalizedQuery),
+      (cityNames[alert.cityId] ?? String(alert.cityId)).includes(
+        normalizedQuery,
+      ),
     );
-  }, [alerts, query]);
+  }, [alerts, cityNames, query]);
 
   return (
     <section
@@ -156,10 +200,6 @@ export function CitiesList(): JSX.Element {
         />
       )}
 
-      {error && (
-        <p className="px-3 py-2 text-xs text-team-red">לא ניתן לטעון התראות</p>
-      )}
-
       {!error && alerts.length === 0 && (
         <p className="px-3 py-3 text-sm text-text-dim">אין התראות פעילות</p>
       )}
@@ -182,7 +222,7 @@ export function CitiesList(): JSX.Element {
                   />
                   <div className="flex min-w-0 flex-col gap-0.5">
                     <span className="truncate">
-                      {alert.cityName ?? `יישוב ${alert.cityId}`}
+                      {cityNames[alert.cityId] ?? `יישוב ${alert.cityId}`}
                     </span>
                     {minutesSinceAlert !== null && (
                       <span className="text-[11px] text-text-dim">

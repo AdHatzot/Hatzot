@@ -34,7 +34,7 @@ import { LauncherAmmunition } from "./entities/launcherAmmunition.entity";
 import { LauncherType } from "./entities/launcherType.entity";
 import { LiveLauncher } from "./entities/liveLauncher.entity";
 
-//add to .env
+// Add to .env if needed:
 // PORT=3000
 // DB_HOST=localhost
 // DB_PORT=5432
@@ -42,7 +42,8 @@ import { LiveLauncher } from "./entities/liveLauncher.entity";
 // DB_USERNAME=postgres
 // DB_PASSWORD=postgres
 // DB_SCHEMA=hatzot
-// NODE_ENV=dev
+// NODE_ENV=development
+// DB_SSL=false
 
 export const dataSource = new DataSource({
   type: "postgres",
