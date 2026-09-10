@@ -15,4 +15,4 @@ export const logisticsRoutes: Router = Router();
 
 logisticsRoutes.get("/", asyncHandler(logistics.getStatus));
 logisticsRoutes.get("/all", asyncHandler(logistics.getAll));
-logisticsRoutes.get("/live-deployment/:id", asyncHandler(logistics.getLiveDeployments));
+logisticsRoutes.get("/launchers/:id", asyncHandler(logistics.getLiveDeployments));
