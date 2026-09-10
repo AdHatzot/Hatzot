@@ -20,6 +20,7 @@ import { alertsRoutes } from "./routes/alerts.routes";
 import { logisticsRoutes } from "./routes/logistics.routes";
 import { loopRoutes } from "./routes/loop.routes";
 import { startBlueReloadTicker } from "./services/blue.service";
+import { interceptionsRoutes } from "./routes/interceptions.routes";
 
 const PORT = Number(process.env.PORT ?? 3000);
 const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN ?? "http://localhost:5173";
@@ -37,6 +38,7 @@ app.use("/api/blue", blueRoutes);
 app.use("/api/alerts", alertsRoutes);
 app.use("/api/logistics", logisticsRoutes);
 app.use("/api/loop", loopRoutes);
+app.use("/api/interceptions", interceptionsRoutes);
 
 // Rejections from asyncHandler land here — JSON, never Express's HTML page.
 const onError: ErrorRequestHandler = (err, _req, res, _next) => {
@@ -51,7 +53,9 @@ async function main(): Promise<void> {
   attachHub(server);
   startBlueReloadTicker();
   server.listen(PORT, () => {
-    console.log(`c2-backend  http://localhost:${PORT}  ws://localhost:${PORT}/ws`);
+    console.log(
+      `c2-backend  http://localhost:${PORT}  ws://localhost:${PORT}/ws`,
+    );
   });
 }
 
