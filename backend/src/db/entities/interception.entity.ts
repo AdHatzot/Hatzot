@@ -1,4 +1,6 @@
-import { Entity, PrimaryGeneratedColumn, Column } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from "typeorm";
+import { InterceptorType } from "./interceptorType.entity";
+import { Drone } from "./drone.entity";
 
 export enum InterceptionStatus {
   PENDING = "PENDING",
@@ -24,8 +26,16 @@ export class Interception {
   @Column({ name: "interceptor_type_id", type: "smallint" })
   interceptorTypeId!: number;
 
+  @ManyToOne(() => InterceptorType)
+  @JoinColumn({ name: "interceptor_type_id" })
+  interceptorType!: InterceptorType;
+
   @Column({ name: "drone_id", type: "bigint" })
   droneId!: number;
+
+  @ManyToOne(() => Drone)
+  @JoinColumn({ name: "drone_id" })
+  drone!: Drone;
 
   @Column({ name: "launched_at", type: "timestamptz" })
   launchedAt!: Date;
