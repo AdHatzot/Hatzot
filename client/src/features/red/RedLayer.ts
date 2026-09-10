@@ -26,6 +26,9 @@ async function fetchAndUpdateDrones(group: LayerGroup): Promise<void> {
   try {
     const SERVER_URL = import.meta.env.VITE_SERVER_URL;
     const response = await axios.get<Drone[]>(`${SERVER_URL}/api/red/drones`);
+
+    console.log(response);
+
     const drones = response.data;
     const colour = cssVar("--team-red");
 
@@ -40,7 +43,7 @@ async function fetchAndUpdateDrones(group: LayerGroup): Promise<void> {
     }
 
     for (const drone of drones) {
-      const { latitude, longitude } = drone.location;
+      const { latitude, longitude } = drone.position;
 
       if (droneMarkers.has(drone.id)) {
         droneMarkers.get(drone.id)!.setLatLng([latitude, longitude]);
