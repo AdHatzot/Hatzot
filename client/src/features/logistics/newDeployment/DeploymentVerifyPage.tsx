@@ -1,16 +1,45 @@
-import { useEffect, useMemo, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import type { CsvRow } from "./types";
 import { getLauncherTypeIcon } from "./LauncherIcons";
+import {
+  LogisticsMapPreview,
+  type LogisticsMapHandle,
+  type PreviewLauncher,
+} from "../map/LogisticsMapPreview";
 
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 
+/** Display id for a row — rows from a CSV have no id of their own. */
+function launcherLabel(index: number): string {
+  return `מיירט-${String(index + 1).padStart(2, "0")}`;
+}
+
+/** GET /api/logistics/launchers?id= */
+interface DeploymentLauncherFromApi {
+  id?: string | number;
+  name?: string;
+  location?: { lat?: number; long?: number };
+  interceptors?: Array<{ name?: string; amount?: number | string }>;
+}
+
+/** GET /api/logistics/deployments/:id */
+interface DeploymentFromApi {
+  name?: string;
+  launchers?: Array<{
+    id?: string | number;
+    name?: string;
+    location?: { longitude?: number; latitude?: number; asl?: number; agl?: number };
+    ammunitionAmount?: number;
+  }>;
+}
+
 /** Shape of the location.state passed from NewDeploymentButton after creation */
 interface DeploymentVerifyState {
-  deploymentId: number;
-  deploymentName: string;
-  rows: CsvRow[];
-  fileName: string;
+  deploymentId?: number;
+  deploymentName?: string;
+  rows?: CsvRow[];
+  fileName?: string;
 }
 
 interface LauncherTypeFromApi {
@@ -28,26 +57,100 @@ interface LauncherTypeSummary {
 export function DeploymentVerifyPage(): JSX.Element {
   const location = useLocation();
   const navigate = useNavigate();
+  const { id: paramId } = useParams<{ id: string }>();
   const state = location.state as DeploymentVerifyState | null;
 
-  // If no state (e.g. direct URL navigation), redirect back
-  useEffect(() => {
-    if (!state) {
-      navigate("/logistics", { replace: true });
-    }
-  }, [state, navigate]);
+  const deploymentId = state?.deploymentId ?? (paramId ? Number(paramId) : null);
 
-  const deploymentName = state?.deploymentName ?? "";
-  const initialRows = state?.rows ?? [];
-  const currentFileName = state?.fileName ?? "";
-
+  const [deploymentName, setDeploymentName] = useState(state?.deploymentName ?? "");
+  const [currentFileName, setCurrentFileName] = useState(state?.fileName ?? "");
   const [isEditingName, setIsEditingName] = useState(false);
-  const [editableName, setEditableName] = useState(deploymentName);
-  const [editableRows, setEditableRows] = useState<CsvRow[]>(initialRows);
+  const [editableName, setEditableName] = useState(state?.deploymentName ?? "");
+  const [editableRows, setEditableRows] = useState<CsvRow[]>(state?.rows ?? []);
   const [rowsHistory, setRowsHistory] = useState<CsvRow[][]>([]);
   const [mapSearch, setMapSearch] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [isLoadingDeployment, setIsLoadingDeployment] = useState(false);
+
+  // If no deploymentId, redirect back
+  useEffect(() => {
+    if (!deploymentId) {
+      navigate("/logistics", { replace: true });
+      return;
+    }
+
+    if (state?.rows && state.rows.length > 0 && state.deploymentName) {
+      return;
+    }
+
+    let isMounted = true;
+    async function loadDeployment() {
+      setIsLoadingDeployment(true);
+      try {
+        const [depRes, launchersRes] = await Promise.all([
+          fetch(`${API_URL}/api/logistics/deployments/${deploymentId}`),
+          fetch(`${API_URL}/api/logistics/launchers?id=${deploymentId}`),
+        ]);
+
+        if (!depRes.ok) {
+          throw new Error("לא ניתן למצוא את הפריסה");
+        }
+
+        const depData: DeploymentFromApi = await depRes.json();
+        const launchersData: DeploymentLauncherFromApi[] = launchersRes.ok
+          ? await launchersRes.json()
+          : [];
+
+        if (isMounted) {
+          const name = depData.name ?? `פריסה ${deploymentId}`;
+          setDeploymentName(name);
+          setEditableName(name);
+          setCurrentFileName(state?.fileName || `${name}.csv`);
+
+          if (Array.isArray(launchersData) && launchersData.length > 0) {
+            const mappedRows: CsvRow[] = launchersData.map((l) => ({
+              id: l.id ? String(l.id) : "",
+              launcher_type_name: String(l.name || ""),
+              longitude: String(l.location?.long ?? 0),
+              latitude: String(l.location?.lat ?? 0),
+              asl: "0",
+              agl: "0",
+              amount: String(
+                Array.isArray(l.interceptors)
+                  ? l.interceptors.reduce((sum: number, item) => sum + (Number(item.amount) || 0), 0)
+                  : 0
+              ),
+            }));
+            setEditableRows(mappedRows);
+          } else if (Array.isArray(depData.launchers) && depData.launchers.length > 0) {
+            const mappedRows: CsvRow[] = depData.launchers.map((l) => ({
+              id: l.id ? String(l.id) : "",
+              launcher_type_name: String(l.name || "ShieldNest-Lite"),
+              longitude: String(l.location?.longitude ?? 0),
+              latitude: String(l.location?.latitude ?? 0),
+              asl: String(l.location?.asl ?? 0),
+              agl: String(l.location?.agl ?? 0),
+              amount: String(l.ammunitionAmount ?? 0),
+            }));
+            setEditableRows(mappedRows);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load deployment:", err);
+      } finally {
+        if (isMounted) {
+          setIsLoadingDeployment(false);
+        }
+      }
+    }
+
+    void loadDeployment();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [deploymentId, state, navigate]);
 
   // Compute number of unsaved changes (name changed + any row modifications)
   const unsavedChangesCount =
@@ -64,7 +167,7 @@ export function DeploymentVerifyPage(): JSX.Element {
   /**
    * Generic handler to update a launcher row (e.g. from coordinates change on the map or panel)
    */
-  const handleUpdateRow = (index: number, updatedFields: Partial<CsvRow>) => {
+  const handleUpdateRow = (index: number, updatedFields: CsvRow) => {
     setRowsHistory((prev) => [...prev, editableRows]);
     setEditableRows((prev) => {
       const updated = [...prev];
@@ -78,7 +181,7 @@ export function DeploymentVerifyPage(): JSX.Element {
    * via PATCH /api/logistics/deployments/:id and returns to /logistics
    */
   const handleSaveDeployment = async () => {
-    if (!state?.deploymentId) {
+    if (!deploymentId) {
       navigate("/logistics");
       return;
     }
@@ -115,7 +218,7 @@ export function DeploymentVerifyPage(): JSX.Element {
       }
 
       const response = await fetch(
-        `${API_URL}/api/logistics/deployments/${state.deploymentId}`,
+        `${API_URL}/api/logistics/deployments/${deploymentId}`,
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
@@ -145,15 +248,10 @@ export function DeploymentVerifyPage(): JSX.Element {
   const [launcherTypes, setLauncherTypes] = useState<LauncherTypeFromApi[]>([]);
   const [launcherTypesLoading, setLauncherTypesLoading] = useState(true);
 
-  // Selected launcher state
-  const [selectedLauncher, setSelectedLauncher] = useState<{
-    id: string;
-    typeName: string;
-    missileType: string;
-    range: string;
-    coordinates: string;
-    availableInterceptors: string;
-  } | null>(null);
+  // Selected launcher (row index), and whether it can be dragged to a new spot
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [isRelocating, setIsRelocating] = useState(false);
+  const mapRef = useRef<LogisticsMapHandle>(null);
 
   // Fetch launcher types from API
   useEffect(() => {
@@ -217,38 +315,69 @@ export function DeploymentVerifyPage(): JSX.Element {
     return result;
   }, [editableRows, launcherTypes]);
 
-  const handleTogglePreviewLauncher = (typeName?: string) => {
-    if (selectedLauncher) {
-      setSelectedLauncher(null);
-      return;
-    }
+  /** Rows as map launchers — keyed by row index so a moved launcher keeps its key. */
+  const previewLaunchers: PreviewLauncher[] = useMemo(
+    () =>
+      editableRows.map((row, index) => {
+        const typeName = (row.launcher_type_name || "").trim();
+        return {
+          key: String(index),
+          label: launcherLabel(index),
+          typeName,
+          latitude: Number(row.latitude),
+          longitude: Number(row.longitude),
+          rangeM: launcherTypes.find((lt) => lt.name === typeName)?.rangeM ?? null,
+        };
+      }),
+    [editableRows, launcherTypes],
+  );
 
-    const targetType = typeName || launcherTypes[0]?.name || "Unknown";
-    // Find the matching API launcher type for range info
-    const apiType = launcherTypes.find((lt) => lt.name === targetType);
-    const rangeKm = apiType?.rangeM ? `${Math.round(apiType.rangeM / 1000)} ק"מ` : '—';
+  // Derived from the row, so the card follows a launcher as it is moved or undone
+  const selectedLauncher = useMemo(() => {
+    const row = selectedIndex === null ? undefined : editableRows[selectedIndex];
+    if (selectedIndex === null || !row) return null;
 
-    // Find the first matching row from parsed data for coordinates
-    const matchingRow = editableRows.find(
-      (r) => (r.launcher_type_name || "").trim() === targetType,
-    );
+    const typeName = (row.launcher_type_name || "").trim() || "Unknown";
+    const apiType = launcherTypes.find((lt) => lt.name === typeName);
+    const latitude = Number(row.latitude);
+    const longitude = Number(row.longitude);
 
-    setSelectedLauncher({
-      id: `מיירט-${String(state?.deploymentId ?? 0).padStart(2, "0")}`,
-      typeName: targetType,
+    return {
+      id: launcherLabel(selectedIndex),
+      typeName,
       missileType: "—",
-      range: rangeKm,
-      coordinates: matchingRow
-        ? `${matchingRow.latitude}, ${matchingRow.longitude}`
-        : "—",
-      availableInterceptors: matchingRow?.amount ?? "—",
+      range: apiType?.rangeM ? `${Math.round(apiType.rangeM / 1000)} ק"מ` : "—",
+      coordinates:
+        row.latitude && row.longitude && Number.isFinite(latitude) && Number.isFinite(longitude)
+          ? `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`
+          : "—",
+      availableInterceptors: row.amount || "—",
+    };
+  }, [selectedIndex, editableRows, launcherTypes]);
+
+  const handleSelectLauncher = (key: string) => {
+    const index = Number(key);
+    if (index !== selectedIndex) setIsRelocating(false);
+    setSelectedIndex(index);
+  };
+
+  const handleMoveLauncher = (key: string, latitude: number, longitude: number) => {
+    handleUpdateRow(Number(key), {
+      latitude: latitude.toFixed(6),
+      longitude: longitude.toFixed(6),
     });
+  };
+
+  const clearSelection = () => {
+    setSelectedIndex(null);
+    setIsRelocating(false);
   };
 
   const validCount = editableRows.length;
   const totalIdentified = editableRows.length;
 
-  if (!state) {
+  // Without router state (a reload or a shared link) the deployment loads from the API.
+  if (!deploymentId) {
     return <div />;
   }
 
@@ -434,7 +563,7 @@ export function DeploymentVerifyPage(): JSX.Element {
                 {selectedLauncher && (
                   <button
                     type="button"
-                    onClick={() => setSelectedLauncher(null)}
+                    onClick={clearSelection}
                     className="text-[11px] text-gray-400 hover:text-white"
                   >
                     נקה בחירה
@@ -483,7 +612,14 @@ export function DeploymentVerifyPage(): JSX.Element {
                   {/* Change Location Button */}
                   <button
                     type="button"
-                    className="mt-5 flex h-10 w-full items-center justify-center gap-2 rounded-md border border-[#334255] bg-[#111823] text-xs font-semibold text-white transition hover:bg-[#1b2536]"
+                    data-testid="logistics-relocate"
+                    aria-pressed={isRelocating}
+                    onClick={() => setIsRelocating((value) => !value)}
+                    className={`mt-5 flex h-10 w-full items-center justify-center gap-2 rounded-md border text-xs font-semibold transition ${
+                      isRelocating
+                        ? "border-sky-500/70 bg-sky-950/40 text-sky-300 hover:bg-sky-950/60"
+                        : "border-[#334255] bg-[#111823] text-white hover:bg-[#1b2536]"
+                    }`}
                   >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <circle cx="12" cy="12" r="10" />
@@ -492,7 +628,7 @@ export function DeploymentVerifyPage(): JSX.Element {
                       <line x1="12" y1="6" x2="12" y2="2" />
                       <line x1="12" y1="22" x2="12" y2="18" />
                     </svg>
-                    <span>שינוי מיקום</span>
+                    <span>{isRelocating ? "גרור את המערכת במפה · לחץ לסיום" : "שינוי מיקום"}</span>
                   </button>
                 </div>
               ) : (
@@ -551,7 +687,7 @@ export function DeploymentVerifyPage(): JSX.Element {
                   </button>
 
                   <div className="mt-3 text-center text-[11px] text-[#6b7785]">
-                    לא נבחרה מערכת מהמפה (תצוגת מפה אינה זמינה כעת)
+                    לחץ על מערכת במפה לצפייה בפרטים
                   </div>
                 </div>
               )}
@@ -590,106 +726,105 @@ export function DeploymentVerifyPage(): JSX.Element {
           {/* Header */}
           <div className="flex h-11 shrink-0 items-center justify-between border-b border-[#1c2533] px-4">
             <h3 className="text-sm font-bold text-white">תצוגת הפריסה</h3>
-            <span className="text-xs text-[#7f8c9b]">
-              לחץ על מערכת לצפייה בפרטים ולשינוי מיקום
+            <span className={`text-xs ${isRelocating ? "text-sky-300" : "text-[#7f8c9b]"}`}>
+              {isRelocating && selectedLauncher
+                ? `גרור את ${selectedLauncher.id} למיקום החדש`
+                : "לחץ על מערכת לצפייה בפרטים ולשינוי מיקום"}
             </span>
           </div>
 
-          {/* Tactical Map Placeholder Area */}
-          <div className="relative flex min-h-0 flex-1 flex-col justify-between overflow-hidden p-4">
-            {/* Subtle tactical radar background styling */}
-            <div
-              className="absolute inset-0 pointer-events-none opacity-20"
-              style={{
-                backgroundImage: `radial-gradient(circle at center, #223249 1px, transparent 1px), linear-gradient(to right, #16202e 1px, transparent 1px), linear-gradient(to bottom, #16202e 1px, transparent 1px)`,
-                backgroundSize: "40px 40px",
-              }}
+          {/* Tactical Map */}
+          <div className="relative min-h-0 flex-1 overflow-hidden">
+            <LogisticsMapPreview
+              ref={mapRef}
+              launchers={previewLaunchers}
+              selectedKey={selectedIndex === null ? null : String(selectedIndex)}
+              movableKey={isRelocating && selectedIndex !== null ? String(selectedIndex) : null}
+              search={mapSearch}
+              emptyLabel={isLoadingDeployment ? undefined : "אין מערכות עם קואורדינטות תקינות להצגה"}
+              onSelect={handleSelectLauncher}
+              onMove={handleMoveLauncher}
             />
 
-            {/* Top Toolbar: Search Input */}
-            <div className="relative z-10 flex items-center justify-start">
-              <div className="relative w-64">
-                <input
-                  type="text"
-                  placeholder="חיפוש במפה"
-                  value={mapSearch}
-                  onChange={(e) => setMapSearch(e.target.value)}
-                  className="h-9 w-full rounded-md border border-[#2b3848] bg-[#0f151e]/90 pr-9 pl-3 text-xs text-white placeholder:text-gray-400 outline-none backdrop-blur-sm transition focus:border-sky-500"
-                />
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  className="absolute right-2.5 top-2.5 text-gray-400"
-                >
-                  <circle cx="11" cy="11" r="8" />
-                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
-                </svg>
-              </div>
-            </div>
-
-            {/* Center: Clean tactical placeholder */}
-            <div className="relative z-10 flex flex-col items-center justify-center text-center">
-              <div className="flex h-16 w-16 items-center justify-center rounded-full border border-sky-500/20 bg-sky-500/5 text-sky-400">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                  <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6" />
-                  <line x1="8" y1="2" x2="8" y2="18" />
-                  <line x1="16" y1="6" x2="16" y2="22" />
-                </svg>
-              </div>
-              <p className="mt-3 text-sm font-medium text-gray-300">
-                תצוגת מפה אינה פעילה
-              </p>
-              <p className="mt-1 max-w-sm text-xs text-[#7f8c9b]">
-                פרטי הפריסה וסיכום המערכות מוצגים בחלונית הבקרה מימין. תצוגת המפה האינטראקטיבית תתווסף בהמשך.
-              </p>
-            </div>
-
-            {/* Bottom Row: Zoom buttons and Legend bar */}
-            <div className="relative z-10 flex items-end justify-between gap-4">
-              {/* Zoom Controls */}
-              <div className="flex flex-col overflow-hidden rounded-md border border-[#2b3848] bg-[#111722]/90 shadow-md">
-                <button
-                  type="button"
-                  aria-label="התקרב"
-                  className="flex h-8 w-8 items-center justify-center text-base font-bold text-gray-300 transition hover:bg-white/10 hover:text-white"
-                >
-                  +
-                </button>
-                <div className="h-px bg-[#2b3848]" />
-                <button
-                  type="button"
-                  aria-label="התרחק"
-                  className="flex h-8 w-8 items-center justify-center text-base font-bold text-gray-300 transition hover:bg-white/10 hover:text-white"
-                >
-                  −
-                </button>
+            <div className="pointer-events-none absolute inset-0 z-10 flex flex-col justify-between p-4 pb-7">
+              {/* Top Toolbar: Search Input */}
+              <div className="flex items-center justify-start">
+                <div className="pointer-events-auto relative w-64">
+                  <input
+                    type="text"
+                    placeholder="חיפוש במפה"
+                    value={mapSearch}
+                    onChange={(e) => setMapSearch(e.target.value)}
+                    className="h-9 w-full rounded-md border border-[#2b3848] bg-[#0f151e]/90 pr-9 pl-3 text-xs text-white placeholder:text-gray-400 outline-none backdrop-blur-sm transition focus:border-sky-500"
+                  />
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    className="absolute right-2.5 top-2.5 text-gray-400"
+                  >
+                    <circle cx="11" cy="11" r="8" />
+                    <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                  </svg>
+                </div>
               </div>
 
-              {/* Bottom Legend Bar - DYNAMIC from API */}
-              <div className="flex items-center gap-6 rounded-md border border-[#222c3b] bg-[#0c121a]/95 px-5 py-2.5 backdrop-blur-sm">
-                {launcherTypesLoading ? (
-                  <span className="text-xs text-gray-400">טוען סוגי משגרים...</span>
-                ) : (
-                  launcherSummaries
-                    .filter((s) => s.count > 0)
-                    .map((item) => (
-                      <div
-                        key={item.name}
-                        className="flex items-center gap-2"
-                      >
-                        {getLauncherTypeIcon(item.name, 20)}
-                        <div className="flex items-baseline gap-1 text-xs">
-                          <span className="text-gray-300 font-medium">{item.name}</span>
-                          <span className="font-bold text-white">{item.count}</span>
+              {isLoadingDeployment && (
+                <div className="flex justify-center">
+                  <span className="rounded-md border border-[#2b3848] bg-[#0c121a]/95 px-4 py-2 text-xs text-gray-300">
+                    טוען פריסה...
+                  </span>
+                </div>
+              )}
+
+              {/* Bottom Row: Zoom buttons and Legend bar */}
+              <div className="flex items-end justify-between gap-4">
+                {/* Zoom Controls */}
+                <div className="pointer-events-auto flex flex-col overflow-hidden rounded-md border border-[#2b3848] bg-[#111722]/90 shadow-md">
+                  <button
+                    type="button"
+                    aria-label="התקרב"
+                    onClick={() => mapRef.current?.zoomIn()}
+                    className="flex h-8 w-8 items-center justify-center text-base font-bold text-gray-300 transition hover:bg-white/10 hover:text-white"
+                  >
+                    +
+                  </button>
+                  <div className="h-px bg-[#2b3848]" />
+                  <button
+                    type="button"
+                    aria-label="התרחק"
+                    onClick={() => mapRef.current?.zoomOut()}
+                    className="flex h-8 w-8 items-center justify-center text-base font-bold text-gray-300 transition hover:bg-white/10 hover:text-white"
+                  >
+                    −
+                  </button>
+                </div>
+
+                {/* Bottom Legend Bar - DYNAMIC from API */}
+                <div className="pointer-events-auto flex items-center gap-6 rounded-md border border-[#222c3b] bg-[#0c121a]/95 px-5 py-2.5 backdrop-blur-sm">
+                  {launcherTypesLoading ? (
+                    <span className="text-xs text-gray-400">טוען סוגי משגרים...</span>
+                  ) : (
+                    launcherSummaries
+                      .filter((s) => s.count > 0)
+                      .map((item) => (
+                        <div
+                          key={item.name}
+                          className="flex items-center gap-2"
+                        >
+                          {getLauncherTypeIcon(item.name, 20)}
+                          <div className="flex items-baseline gap-1 text-xs">
+                            <span className="text-gray-300 font-medium">{item.name}</span>
+                            <span className="font-bold text-white">{item.count}</span>
+                          </div>
                         </div>
-                      </div>
-                    ))
-                )}
+                      ))
+                  )}
+                </div>
               </div>
             </div>
           </div>

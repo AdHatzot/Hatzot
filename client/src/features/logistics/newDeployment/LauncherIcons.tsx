@@ -1,5 +1,3 @@
-import React from "react";
-
 export interface LauncherIconProps {
   className?: string;
   size?: number;
@@ -159,19 +157,16 @@ export function GenericLauncherIcon({ className = "", size = 28 }: LauncherIconP
   );
 }
 
-export function getLauncherTypeIcon(name: string, size = 28): JSX.Element {
+export function getLauncherTypeIconUrl(name: string): string {
   const normalized = name.trim().toLowerCase();
-  let iconPath = "/icons/blue-marker.svg";
+  if (normalized.includes("ironhook")) return "/icons/IronHook-SR.svg";
+  if (normalized.includes("horizoneye")) return "/icons/HorizonEye-MX.svg";
+  if (normalized.includes("cloudfence")) return "/icons/CloudFence-Area.svg";
+  return "/icons/blue-marker.svg";
+}
 
-  if (normalized.includes("shieldnest")) {
-    iconPath = "/icons/blue-marker.svg";
-  } else if (normalized.includes("ironhook")) {
-    iconPath = "/icons/IronHook-SR.svg";
-  } else if (normalized.includes("horizoneye")) {
-    iconPath = "/icons/HorizonEye-MX.svg";
-  } else if (normalized.includes("cloudfence")) {
-    iconPath = "/icons/CloudFence-Area.svg";
-  }
+export function getLauncherTypeIcon(name: string, size = 28): JSX.Element {
+  const iconPath = getLauncherTypeIconUrl(name);
 
   return (
     <img

@@ -1,94 +1,175 @@
 /**
- * @team     interceptions
- * @owner    interceptions-lead
+ * @team     loop
+ * @owner    loop-lead
  * @public   yes
- * @updated  2026-09-09
+ * @updated  2026-09-10
  *
+ * Firing interceptors at tracked drones. Each shot comes from the stocked
+ * launcher line with the best success rate against the drone's type (the
+ * nearest one breaks ties). It is saved IN_PROGRESS and broadcast so every
+ * screen plays the flight, and it settles when the flight ends: the result is
+ * saved and, on a HIT, the drone is removed from the red feed.
  */
-
+import { broadcast } from "../ws";
+import { HttpError } from "../shared/httpError";
 import {
-  getSucessRate,
-  interceptionsRepository,
-} from "../repositories/interceptions.repository";
-import {
-  Interception,
   InterceptionResult,
   InterceptionStatus,
+  type Interception,
 } from "../db/entities/interception.entity";
+import {
+  findStockedLaunchers,
+  getSucessRate,
+  interceptionsRepository,
+  sameDroneType,
+  type StockedLauncher,
+} from "../repositories/interceptions.repository";
+import { destroyDrone, getTrackedDrones, resolveDroneDbIds } from "./red.service";
 
-// TODO: Un-comment once external API endpoint is available
-// async function fetchInterceptionData(drones_id: number[]) {
-//   const response = await fetch("", {
-//     method: "POST",
-//     headers: { "Content-Type": "application/json" },
-//     body: JSON.stringify({ drones_id }),
-//   });
-//   return response.json();
-// }
+/** How long an interceptor flies. The client animation plays for the same time. */
+const FLIGHT_MS = 1800;
+/** Chance to hit when an interceptor has no estimate against the drone's type. */
+const DEFAULT_SUCCESS_RATE = 0.5;
+const PRIORITY = 3;
 
-const mockData = (drones_id: number[]) => {
-  return drones_id.map((droneId) => ({
-    droneId,
-    liveLauncherId: 1,
-    interceptorTypeId: 1,
-    interceptorLongitude: 0,
-    interceptorLatitude: 0,
-    priority: 3,
-    timeOfImpact: "2026-09-10T13:30:00Z",
+export interface GeoPoint {
+  latitude: number;
+  longitude: number;
+}
+
+/** One launched interceptor — returned to the caller and broadcast to every screen. */
+export interface InterceptionLaunch {
+  interceptionId: number;
+  /** The tracked drone's feed id. */
+  droneId: string;
+  /** Decided at launch; applied (saved, drone removed on HIT) when the flight ends. */
+  result: "HIT" | "MISS";
+  interceptor: string;
+  from: GeoPoint;
+  to: GeoPoint;
+  durationMs: number;
+}
+
+// Drones with an interceptor in the air, so a second click does not fire twice.
+const inFlight = new Set<string>();
+
+function distanceKm(a: GeoPoint, b: GeoPoint): number {
+  const rad = Math.PI / 180;
+  const dLat = (b.latitude - a.latitude) * rad;
+  const dLng = (b.longitude - a.longitude) * rad;
+  const h =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(a.latitude * rad) * Math.cos(b.latitude * rad) * Math.sin(dLng / 2) ** 2;
+  return 12742 * Math.asin(Math.sqrt(h));
+}
+
+function successRate(launcher: StockedLauncher, droneType: string): number {
+  const entry = launcher.successRates.find((rate) => sameDroneType(rate.droneType, droneType));
+  return entry?.successRate ?? DEFAULT_SUCCESS_RATE;
+}
+
+/** Best chance against this drone type first; the nearest launcher breaks ties. */
+function pickLauncher(
+  stock: StockedLauncher[],
+  droneType: string,
+  target: GeoPoint,
+): { launcher: StockedLauncher; rate: number } {
+  let launcher = stock[0];
+  let rate = successRate(launcher, droneType);
+  let distance = distanceKm(launcher, target);
+
+  for (const candidate of stock.slice(1)) {
+    const candidateRate = successRate(candidate, droneType);
+    const candidateDistance = distanceKm(candidate, target);
+    if (candidateRate > rate || (candidateRate === rate && candidateDistance < distance)) {
+      launcher = candidate;
+      rate = candidateRate;
+      distance = candidateDistance;
+    }
+  }
+  return { launcher, rate };
+}
+
+/**
+ * Fire at these tracked drones (feed ids). Drones already under fire, no
+ * longer in the feed, or not stored yet are skipped — the returned launches
+ * are the shots actually fired.
+ */
+export async function interceptDrones(droneIds: string[]): Promise<InterceptionLaunch[]> {
+  const targets = getTrackedDrones(droneIds.filter((id) => !inFlight.has(id)));
+  if (targets.length === 0) return [];
+
+  const stock = await findStockedLaunchers();
+  if (stock.length === 0) {
+    throw new HttpError(409, "No launcher has interceptors left");
+  }
+  const dbIds = await resolveDroneDbIds(targets.map((target) => target.id));
+
+  // Synchronous from here to the save: the in-flight check and claim cannot
+  // interleave with another request for the same drone.
+  const shots = targets.flatMap((target) => {
+    const droneDbId = dbIds.get(target.id);
+    if (droneDbId === undefined || inFlight.has(target.id)) return [];
+
+    const to = { latitude: target.launch_point.latitude, longitude: target.launch_point.longitude };
+    const { launcher, rate } = pickLauncher(stock, target.type, to);
+    inFlight.add(target.id);
+    return [{ droneId: target.id, droneDbId, to, launcher, hit: Math.random() < rate }];
+  });
+  if (shots.length === 0) return [];
+
+  let rows: Interception[];
+  try {
+    rows = await interceptionsRepository.save(
+      shots.map((shot) =>
+        interceptionsRepository.create({
+          liveLauncherId: shot.launcher.launcherId,
+          interceptorTypeId: shot.launcher.interceptorTypeId,
+          droneId: shot.droneDbId,
+          launchedAt: new Date(),
+          interceptorLatitude: shot.to.latitude,
+          interceptorLongitude: shot.to.longitude,
+          priority: PRIORITY,
+          status: InterceptionStatus.IN_PROGRESS,
+          result: null,
+        }),
+      ),
+    );
+  } catch (error) {
+    for (const shot of shots) inFlight.delete(shot.droneId);
+    throw error;
+  }
+
+  const launches: InterceptionLaunch[] = shots.map((shot, index) => ({
+    interceptionId: Number(rows[index].id),
+    droneId: shot.droneId,
+    result: shot.hit ? "HIT" : "MISS",
+    interceptor: shot.launcher.interceptorName,
+    from: { latitude: shot.launcher.latitude, longitude: shot.launcher.longitude },
+    to: shot.to,
+    durationMs: FLIGHT_MS,
   }));
-};
 
-export async function createInterception(
-  drones_id: number[],
-): Promise<Interception[]> {
-  // TODO: replace mockData(drones_id) with a real API call once the endpoint exists,
+  // Every screen plays the flight, not only the one that fired.
+  broadcast("loop:interceptions.launched", launches);
+  setTimeout(() => settle(rows, launches), FLIGHT_MS);
 
-  // TODO: medium-check if an active interception exists for the given drone_id and the result isnt final yet (if it is and you have a MISS then lanch again)
-  const interceptionData = mockData(drones_id);
+  return launches;
+}
 
-  const saves: Partial<Interception>[] = interceptionData.map((data) => ({
-    liveLauncherId: data.liveLauncherId,
-    interceptorTypeId: data.interceptorTypeId,
-    droneId: data.droneId,
-    launchedAt: new Date(),
-    interceptorLongitude: data.interceptorLongitude,
-    interceptorLatitude: data.interceptorLatitude,
-    status: InterceptionStatus.IN_PROGRESS,
-    priority: data.priority,
-    result: null,
-  }));
+/** The interceptors reach their targets: drop what was hit, record every outcome. */
+function settle(rows: Interception[], launches: InterceptionLaunch[]): void {
+  launches.forEach((launch, index) => {
+    const hit = launch.result === "HIT";
+    rows[index].status = hit ? InterceptionStatus.SUCCESS : InterceptionStatus.FAILED;
+    rows[index].result = hit ? InterceptionResult.HIT : InterceptionResult.MISS;
+    if (hit) destroyDrone(launch.droneId);
+    inFlight.delete(launch.droneId);
+  });
 
-  const saved = await interceptionsRepository.save(saves);
-  /**
-   *  TODO: Used this frontend function with a default darution of 2000ms and the start point which is the lancher and the end point which is the drone it self to animate it wait 2 secs and end opertion.
-   * animateInterception({
-    group,
-
-    start,
-
-    target,
-
-    result: "hit",
-
-    durationMs: 1800,
-  });*/
-
-  // TODO: after the animation remove from the DB connected to the project 1 of the spesific missles we used from the lancher we used
-  const updated = await Promise.all(
-    saved.map(async (interception) => {
-      const didIntercept = await getDidIntercept(interception.id);
-      interception.status = didIntercept
-        ? InterceptionStatus.SUCCESS
-        : InterceptionStatus.FAILED;
-      interception.result = didIntercept
-        ? InterceptionResult.HIT
-        : InterceptionResult.MISS;
-      return interception;
-    }),
-  );
-  // TODO: delete drone using the red team function that deletes it incase of HIT only - incase of miss just finish the opeation without removing the drone
-
-  return await interceptionsRepository.save(updated);
+  interceptionsRepository
+    .save(rows)
+    .catch((error: unknown) => console.error("Saving interception results failed:", error));
 }
 
 export async function getDidIntercept(
