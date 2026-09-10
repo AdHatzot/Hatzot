@@ -1,0 +1,10 @@
+import type { TeamMapLayer } from "@/shared/contracts";
+import { mountInterceptionLayer } from "./InterceptionLayer"
+
+export const interceptionLayer: TeamMapLayer = {
+  id: "interception",
+  label: "יירוטים",
+  colour: "#ffffff",
+  defaultVisible: true,
+  mount: mountInterceptionLayer,
+};

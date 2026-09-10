@@ -7,5 +7,6 @@
 import type { TeamMapLayer } from "@/shared/contracts";
 import { redLayer } from "@/features/red";
 import { blueLayer } from "@/features/blue";
+import { interceptionLayer } from "@/features/Interceptions";
 
-export const TEAM_LAYERS: readonly TeamMapLayer[] = [redLayer, blueLayer];
+export const TEAM_LAYERS: readonly TeamMapLayer[] = [redLayer, blueLayer, interceptionLayer];
