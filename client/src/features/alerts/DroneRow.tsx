@@ -1,7 +1,6 @@
 import { Drone } from "@/types/drones";
 import { CrosshairIcon } from "./CrosshairIcon";
 
-
 // const THREAT_LABELS: Record<ThreatLevel, string> = {
 //   high: "High",
 //   medium: "Medium",
@@ -17,10 +16,7 @@ export function DroneRow({ drone }: { drone: Drone }): JSX.Element {
     >
       <div className="flex items-center gap-2">
         <span className="text-sm text-text">{drone.id}</span>
-        <span
-          className=
-            "h-2 w-2 rounded-full bg-emerald-500 "
-        />
+        <span className="h-2 w-2 rounded-full bg-emerald-500 " />
       </div>
 
       {/* <span
