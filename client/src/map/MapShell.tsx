@@ -31,33 +31,32 @@ export interface InfoBarItem {
   icon: React.ReactNode;
 }
 
-// TODO: replace with real data source
-const DEMO_ITEMS: InfoBarItem[] = [
-  {
-    id: "i1",
-    label: "ShieldNest-Lite",
-    count: 18,
-    icon: <img src={BlueMarker} alt="Blue Marker" width="30px" height="30px" />,
-  },
-  {
-    id: "i2",
-    label: "IronHook-SR",
-    count: 14,
-    icon: <img src={IronHook} alt="Blue Marker" width="25px" height="25px" />,
-  },
-  {
-    id: "i3",
-    label: "HorizonEye-MX",
-    count: 12,
-    icon: <img src={HorizonEye} alt="Blue Marker" width="25px" height="25px" />,
-  },
-  {
-    id: "i4",
-    label: "CloudFence-Area",
-    count: 12,
-    icon: <img src={CloudFence} alt="Blue Marker" width="25px" height="25px" />,
-  },
-];
+type Launcher = {
+  id: string;
+  name: string;
+  location: {
+    lat: number;
+    long: number;
+  };
+  range: number;
+  interceptors: any;
+};
+
+// Map launcher names to their respective icons
+const ICON_LOOKUP: Record<string, JSX.Element> = {
+  "ShieldNest-Lite": (
+    <img src={BlueMarker} alt="ShieldNest-Lite" width="30px" height="30px" />
+  ),
+  "IronHook-SR": (
+    <img src={IronHook} alt="IronHook-SR" width="25px" height="25px" />
+  ),
+  "HorizonEye-MX": (
+    <img src={HorizonEye} alt="HorizonEye-MX" width="25px" height="25px" />
+  ),
+  "CloudFence-Area": (
+    <img src={CloudFence} alt="CloudFence-Area" width="25px" height="25px" />
+  ),
+};
 
 export function MapShell({ visible }: { visible: boolean }): JSX.Element {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -65,6 +64,7 @@ export function MapShell({ visible }: { visible: boolean }): JSX.Element {
   const { map, setMap } = useMapContext();
   const [layersOpen, setLayersOpen] = useState(false);
   const { layers, toggle } = useTeamLayers(map);
+  const [info, setInfo] = useState<InfoBarItem[]>([]);
 
   useEffect(() => {
     if (created.current || !containerRef.current) return;
@@ -98,11 +98,33 @@ export function MapShell({ visible }: { visible: boolean }): JSX.Element {
 
   useEffect(() => {
     const loadData = async () => {
-      const response = await fetch(
-        `${API_BASE_URL}/api/logistics/launcher-data`,
-      );
+      try {
+        const response: Launcher[] = await (
+          await fetch(`${API_BASE_URL}/api/logistics/launcher-data`)
+        ).json();
 
-      console.log(response);
+        // Count launcher occurrences by name
+        const countsByName = response.reduce<Record<string, number>>((acc, launcher) => {
+          acc[launcher.name] = (acc[launcher.name] || 0) + 1;
+          return acc;
+        }, {});
+
+        // Build InfoBarItem array dynamically
+        const generatedItems: InfoBarItem[] = Object.entries(countsByName).map(
+          ([name, count], index) => ({
+            id: `item-${index}`,
+            label: name,
+            count,
+            icon: ICON_LOOKUP[name] ?? (
+              <img src={BlueMarker} alt={name} width="25px" height="25px" />
+            ),
+          })
+        );
+
+        setInfo(generatedItems);
+      } catch (err) {
+        console.error("Failed to load launcher info bar data:", err);
+      }
     };
 
     loadData();
@@ -121,7 +143,8 @@ export function MapShell({ visible }: { visible: boolean }): JSX.Element {
       />
       <LayersPanel open={layersOpen} layers={layers} onToggle={toggle} />
 
-      {/* <MapInfoBar infoItems={DEMO_ITEMS} /> */}
+      {/* Render live API info bar data */}
+      <MapInfoBar infoItems={info} />
     </div>
   );
 }
