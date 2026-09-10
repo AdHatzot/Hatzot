@@ -60,11 +60,33 @@ export async function getLiveDeployments(
   req: Request<{ id: string }>,
   res: Response,
 ): Promise<void> {
-  const deploymentId = Number(req.params.id);
-  if (!Number.isInteger(deploymentId) || deploymentId < 1) {
-    res.status(400).json({ error: "deployment id must be a positive integer" });
-    return;
-  }
+  try {
+    const deploymentId = req.query.id !== undefined ? Number(req.query.id) : 1;
 
-  res.json(await logisticsService.getLiveDeployments(deploymentId));
+    if (!Number.isInteger(deploymentId) || deploymentId < 1) {
+      res
+        .status(400)
+        .json({ error: "deployment id must be a positive integer" });
+      return;
+    }
+
+    const data = await logisticsService.getLiveDeployments(deploymentId);
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({ message: "Error retrieving launcher data", error });
+  }
+}
+
+export async function getAllLauncherTypes(
+  _req: Request,
+  res: Response,
+): Promise<void> {
+  res.json(await logisticsService.getAllLauncherTypes());
+}
+
+export async function getAllInterceptorTypes(
+  _req: Request,
+  res: Response,
+): Promise<void> {
+  res.json(await logisticsService.getAllInterceptorTypes());
 }

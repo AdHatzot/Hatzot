@@ -18,7 +18,11 @@ import { LiveLauncher } from "../db/entities/liveLauncher.entity";
 import {
   logisticsDeploymentRepository,
   logisticsLiveLauncherRepository,
+  logisticsLauncherTypeRepository,
+  logisticsInterceptorTypeRepository
 } from "../repositories/logistics.repository";
+import { LauncherType } from "../db/entities/launcherType.entity";
+import { InterceptorType } from "../db/entities/InterceptorType.entity";
 
 export async function getStatus(): Promise<{ team: Team; status: string }> {
   return { team: "logistics", status: "empty" };
@@ -48,7 +52,9 @@ export async function getAll() {
   return await logisticsDeploymentRepository.find();
 }
 
-export async function getLiveDeployments(deploymentId: number): Promise<
+export async function getLiveDeployments(
+  deploymentId?: number,
+): Promise<
   Array<{
     deployment: unknown;
     launcherId: string;
@@ -61,11 +67,13 @@ export async function getLiveDeployments(deploymentId: number): Promise<
     ammunitionAmount: number;
   }>
 > {
+  const targetDeploymentId = deploymentId ?? 1;
+
   const results = await logisticsLiveLauncherRepository
     .createQueryBuilder("launcher")
     .innerJoinAndSelect("launcher.deployment", "deployment")
     .leftJoin("launcher.launcherAmmunitions", "ammunition")
-    .where("deployment.id = :deploymentId", { deploymentId })
+    .where("deployment.id = :deploymentId", { deploymentId: targetDeploymentId })
     .select([
       "deployment.id",
       "deployment.name",
@@ -75,7 +83,6 @@ export async function getLiveDeployments(deploymentId: number): Promise<
       "launcher.longitude",
       "launcher.asl",
       "launcher.agl",
-      // Sum the total ammunition quantity for this launcher
       "COALESCE(SUM(ammunition.quantity), 0) AS total_ammunition_quantity",
     ])
     .groupBy("launcher.id")
@@ -95,4 +102,12 @@ export async function getLiveDeployments(deploymentId: number): Promise<
       results.raw[index]?.total_ammunition_quantity ?? 0,
     ),
   }));
+}
+
+export async function getAllLauncherTypes(): Promise<Array<LauncherType>> {
+  return await logisticsLauncherTypeRepository.find();
+}
+
+export async function getAllInterceptorTypes(): Promise<Array<InterceptorType>> {
+  return await logisticsInterceptorTypeRepository.find();
 }
