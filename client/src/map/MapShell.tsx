@@ -13,8 +13,45 @@ import { useMapContext } from "./MapContext";
 import { useTeamLayers } from "./useTeamLayers";
 import { LayersButton } from "./controls/LayersButton";
 import { LayersPanel } from "./controls/LayersPanel";
+import { MapInfoBar } from "./MapInfoBar";
+import { Diamond, ChevronsUp, Triangle, Hexagon } from "lucide-react";
 
 const TILE_URL = import.meta.env.VITE_MAP_TILE_URL;
+
+export interface InfoBarItem {
+  id: string;
+  label: string;
+  count: number;
+  icon: React.ReactNode;
+}
+
+// TODO: replace with real data source
+const DEMO_ITEMS: InfoBarItem[] = [
+  {
+    id: "i1",
+    label: "ShieldNest-Lite",
+    count: 18,
+    icon: <Diamond className="h-4 w-4 text-sky-400" />,
+  },
+  {
+    id: "i2",
+    label: "IronHook-SR",
+    count: 14,
+    icon: <ChevronsUp className="h-4 w-4 text-orange-400" />,
+  },
+  {
+    id: "i3",
+    label: "HorizonEye-MX",
+    count: 12,
+    icon: <Triangle className="h-4 w-4 text-emerald-400" />,
+  },
+  {
+    id: "i4",
+    label: "CloudFence-Area",
+    count: 12,
+    icon: <Hexagon className="h-4 w-4 text-violet-400" />,
+  },
+];
 
 export function MapShell({ visible }: { visible: boolean }): JSX.Element {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -65,6 +102,8 @@ export function MapShell({ visible }: { visible: boolean }): JSX.Element {
         onToggle={() => setLayersOpen((v) => !v)}
       />
       <LayersPanel open={layersOpen} layers={layers} onToggle={toggle} />
+
+      <MapInfoBar infoItems={DEMO_ITEMS} />
     </div>
   );
 }
