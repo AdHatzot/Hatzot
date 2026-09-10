@@ -1,18 +1,15 @@
 import L, { type LayerGroup, type Map as LeafletMap } from "leaflet";
 
 interface PolygonFeature {
-  type: "Feature";
-  properties: {
-    CITY_NAME?: string;
-    ENG_NAME?: string;
-    OBJECTID?: number;
-    TTL?: number; // seconds
-    [key: string]: unknown;
-  };
-  geometry: {
-    type: "Polygon";
-    coordinates: number[][][];
-  };
+    type: "Feature";
+    properties: {
+        CITY_NAME?: string;
+        [key: string]: unknown;
+    };
+    geometry: {
+        type: "Polygon";
+        coordinates: number[][][];
+    };
 }
 
 interface PolygonResponse {
