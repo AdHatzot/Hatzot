@@ -35,6 +35,67 @@ const CITIES_GEOJSON_PATH =
   path.join(process.cwd(), "src", "db", "assets", "cities", "CITIES.geojson");
 
 const INFINITE_LINE_DISTANCE_KILOMETERS = 20_040;
+
+/**
+ * Metres per degree of latitude at its shortest, and a trim on the estimate
+ * below: both deliberately conservative so the cheap prune can never drop a
+ * city that the exact turf distance would have accepted.
+ */
+const METRES_PER_DEGREE_LAT = 110_540;
+const PRUNE_SAFETY = 0.9;
+
+type Bbox = readonly [number, number, number, number];
+
+const bboxByPolygon = new WeakMap<
+  Feature<Polygon | MultiPolygon, GeoJsonProperties>,
+  Bbox
+>();
+
+/** Computed once per city — the geojson singleton hands out stable features. */
+function polygonBbox(
+  feature: Feature<Polygon | MultiPolygon, GeoJsonProperties>,
+): Bbox {
+  const cached = bboxByPolygon.get(feature);
+  if (cached) return cached;
+
+  const rings: number[][][] =
+    feature.geometry.type === "Polygon"
+      ? feature.geometry.coordinates
+      : feature.geometry.coordinates.flat();
+
+  let minLon = Infinity;
+  let minLat = Infinity;
+  let maxLon = -Infinity;
+  let maxLat = -Infinity;
+  for (const ring of rings) {
+    for (const [lon, lat] of ring) {
+      if (lon < minLon) minLon = lon;
+      if (lon > maxLon) maxLon = lon;
+      if (lat < minLat) minLat = lat;
+      if (lat > maxLat) maxLat = lat;
+    }
+  }
+
+  const bbox: Bbox = [minLon, minLat, maxLon, maxLat];
+  bboxByPolygon.set(feature, bbox);
+  return bbox;
+}
+
+/**
+ * Lower bound, in metres, on the distance from `location` to the polygon: the
+ * shape sits inside its bbox, so the real distance is never smaller.
+ */
+function bboxDistanceLowerBoundMetres(location: Location, bbox: Bbox): number {
+  const [minLon, minLat, maxLon, maxLat] = bbox;
+  const dLon = Math.max(minLon - location.longitude, 0, location.longitude - maxLon);
+  const dLat = Math.max(minLat - location.latitude, 0, location.latitude - maxLat);
+  if (dLon === 0 && dLat === 0) return 0;
+
+  const latRadians = (location.latitude * Math.PI) / 180;
+  const x = dLon * METRES_PER_DEGREE_LAT * Math.cos(latRadians);
+  const y = dLat * METRES_PER_DEGREE_LAT;
+  return Math.hypot(x, y) * PRUNE_SAFETY;
+}
 const REDIS_ALERT_KEY_PREFIX = "siren:";
 const REDIS_THREATENED_KEY_PREFIX = "threatened:";
 
@@ -84,13 +145,36 @@ export async function getAlertables(): Promise<
       feature.geometry.type === "MultiPolygon",
   );
 
-  return drones.flatMap((drone) =>
-    getAlertableCityZones(
-      getIntersectingCityZones(polygons, drone.location, drone.heading),
-      drone.location,
-      drone.velocity,
-    ),
-  );
+  const alertable: Feature<Polygon | MultiPolygon, GeoJsonProperties>[] = [];
+
+  for (const drone of drones) {
+    // getAlertableCityZones rejects anything further off than velocity x TTL,
+    // so pruning on a cheap lower bound of that same distance first leaves the
+    // ray test a handful of candidates instead of every city polygon. Same
+    // result, two orders of magnitude less work.
+    const candidates = polygons.filter((polygon) => {
+      const ttl = polygon.properties?.TTL;
+      if (typeof ttl !== "number") return false;
+      return (
+        bboxDistanceLowerBoundMetres(drone.location, polygonBbox(polygon)) <=
+        drone.velocity * ttl
+      );
+    });
+
+    alertable.push(
+      ...getAlertableCityZones(
+        getIntersectingCityZones(candidates, drone.location, drone.heading),
+        drone.location,
+        drone.velocity,
+      ),
+    );
+
+    // A whole sweep in one turn starved the ws broadcasts and the red fetch
+    // timer; yielding per drone keeps both on schedule.
+    await new Promise<void>((resolve) => setImmediate(resolve));
+  }
+
+  return alertable;
 }
 export async function cacheDroneAlerts(): Promise<void> {
   const redis = await getRedisClient();
@@ -210,9 +294,16 @@ export const startDroneAlertsTicker = (): void => {
     console.error("initial drone alerts cache", err),
   );
 
+  // One sweep at a time: a slow one skips a tick rather than stacking another
+  // on top of it.
+  let sweeping = false;
   setInterval(() => {
-    cacheDroneAlerts().catch((err: unknown) =>
-      console.error("drone alerts ticker", err),
-    );
+    if (sweeping) return;
+    sweeping = true;
+    cacheDroneAlerts()
+      .catch((err: unknown) => console.error("drone alerts ticker", err))
+      .finally(() => {
+        sweeping = false;
+      });
   }, DRONE_ALERTS_INTERVAL_MS);
 };
