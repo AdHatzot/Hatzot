@@ -37,8 +37,8 @@ function createLauncherPopup(launcher: Launcher): string {
   const interceptorRows =
     interceptors.length > 0
       ? interceptors
-          .map(
-            (interceptor) => `
+        .map(
+          (interceptor) => `
               <tr>
                 <td style="
                   padding:8px 4px;
@@ -60,8 +60,8 @@ function createLauncherPopup(launcher: Launcher): string {
                 </td>
               </tr>
             `,
-          )
-          .join("")
+        )
+        .join("")
       : `
           <tr>
             <td
@@ -412,9 +412,8 @@ export async function mountBlueLayer(
     });
 
     launchers.forEach((launcher) => {
-      console.log(launcher.name);
-
       let icon: any = blueIcon;
+      let color: string = "#1A8BE8"
 
       switch (launcher.name) {
         case "ShieldNest-Lite":
@@ -422,14 +421,26 @@ export async function mountBlueLayer(
           break;
         case "CloudFence-Area":
           icon = cloudFenceIcon;
+          color = "#AF7DE8";
           break;
         case "IronHook-SR":
           icon = ironHookIcon;
+          color = "#ED9E5F";
           break;
         case "HorizonEye-MX":
           icon = horizonEyeIcon;
+          color = "#87BD66";
           break;
       }
+
+      L.circle([launcher.location.lat, launcher.location.long], {
+        radius: launcher.range / 2,
+        color: color,
+        fillColor: color,
+        fillOpacity: 0.05,
+        opacity: 0.15,
+        weight: 0.5,
+      }).addTo(group);
 
       L.marker([launcher.location.lat, launcher.location.long], {
         icon: icon,
