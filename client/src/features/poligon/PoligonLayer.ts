@@ -4,7 +4,6 @@ interface PolygonFeature {
     type: "Feature";
     properties: {
         CITY_NAME?: string;
-        ENG_NAME?: string;
         [key: string]: unknown;
     };
     geometry: {
