@@ -13,3 +13,7 @@ import * as redService from "../services/red.service";
 export async function getStatus(_req: Request, res: Response): Promise<void> {
   res.json(await redService.getStatus());
 }
+
+export async function getDrones(_req: Request, res: Response): Promise<void> {
+  res.json(await redService.getDrones());
+}

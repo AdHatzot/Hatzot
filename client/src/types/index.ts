@@ -7,18 +7,33 @@ export type Location = {
 
 export type Drone = {
   id: number;
-  location: Location;
+  droneId: string;
+  droneType: DroneType;
+  position: Position;
   heading: number;
   velocity: number;
   type: DroneType;
 };
 
-export enum DroneType {
-  SkyMiteC7,
-  LoadBeeM2,
-  FalconLongX4,
-  NanoSwarmQ9,
-}
+export type Position = {
+  id: number;
+  longitude: number;
+  latitude: number;
+  asl: number;
+  agl: number;
+  recordedAt: Date;
+};
+
+export type DroneType = {
+  id: number;
+  name: string;
+  price: number;
+};
+
+// SkyMiteC7,
+//   LoadBeeM2,
+//   FalconLongX4,
+//   NanoSwarmQ9,
 
 export type Launcher = {
   id: number;
