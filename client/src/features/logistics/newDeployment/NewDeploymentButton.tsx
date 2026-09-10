@@ -1,14 +1,59 @@
 import { useState } from "react";
 import { NewDeploymentModal } from "./NewDeploymentModal";
+import type { NewDeployment } from "./types";
+
+const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 
 export function NewDeploymentButton(): JSX.Element {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
+
+  const handleCreate = async (deployment: NewDeployment) => {
+    setIsSubmitting(true);
+    setSubmitError("");
+
+    try {
+      const response = await fetch(
+        `${API_URL}/api/logistics/deployments`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: deployment.name,
+            rows: deployment.rows,
+          }),
+        },
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(
+          errorData?.message ?? `שגיאה ביצירת פריסה (${response.status})`,
+        );
+      }
+
+      const result = await response.json();
+      console.log("Deployment created:", result);
+
+      setIsModalOpen(false);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "שגיאה לא צפויה";
+      setSubmitError(message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <>
       <button
         type="button"
-        onClick={() => setIsModalOpen(true)}
+        onClick={() => {
+          setSubmitError("");
+          setIsModalOpen(true);
+        }}
         className="
           inline-flex
           items-center
@@ -31,19 +76,18 @@ export function NewDeploymentButton(): JSX.Element {
 
       {isModalOpen && (
         <NewDeploymentModal
-          onClose={() => setIsModalOpen(false)}
+          onClose={() => {
+            if (!isSubmitting) {
+              setIsModalOpen(false);
+            }
+          }}
+          isSubmitting={isSubmitting}
+          submitError={submitError}
           onCreated={(deployment) => {
-            console.log("New deployment:", deployment);
-
-            /*
-             * Later, this is where we can send the deployment
-             * and its CSV data to your backend/database.
-             */
-
-            setIsModalOpen(false);
+            void handleCreate(deployment);
           }}
         />
       )}
     </>
   );
-}
+}

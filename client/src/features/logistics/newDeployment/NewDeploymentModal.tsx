@@ -4,6 +4,8 @@ import { CsvRow, NewDeployment } from "./types";
 type NewDeploymentModalProps = {
   onClose: () => void;
   onCreated?: (deployment: NewDeployment) => void;
+  isSubmitting?: boolean;
+  submitError?: string;
 };
 
 const REQUIRED_COLUMNS = [
@@ -182,6 +184,8 @@ function validateCsv(
 export function NewDeploymentModal({
   onClose,
   onCreated,
+  isSubmitting = false,
+  submitError = "",
 }: NewDeploymentModalProps): JSX.Element {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -515,10 +519,9 @@ export function NewDeploymentModal({
                   border-dashed
                   px-5
                   transition
-                  ${
-                    isDragging
-                      ? "border-white bg-white/5"
-                      : "border-[#666d76] hover:bg-white/[0.025]"
+                  ${isDragging
+                    ? "border-white bg-white/5"
+                    : "border-[#666d76] hover:bg-white/[0.025]"
                   }
                 `}
               >
@@ -865,6 +868,27 @@ export function NewDeploymentModal({
             </div>
           </div>
 
+          {/* ================= SUBMIT ERROR ================= */}
+
+          {submitError && (
+            <div
+              className="
+                mt-4
+                rounded-md
+                border
+                border-[#713f3f]
+                bg-[#291719]
+                px-3
+                py-2.5
+                text-right
+                text-[13px]
+                text-[#ff9999]
+              "
+            >
+              {submitError}
+            </div>
+          )}
+
           {/* ================= FOOTER ================= */}
 
           <div
@@ -881,6 +905,7 @@ export function NewDeploymentModal({
             <button
               type="button"
               onClick={onClose}
+              disabled={isSubmitting}
               className="
                 h-12
                 min-w-[112px]
@@ -894,6 +919,8 @@ export function NewDeploymentModal({
                 text-[#e5e7eb]
                 transition
                 hover:bg-white/5
+                disabled:cursor-not-allowed
+                disabled:opacity-50
               "
             >
               ביטול
@@ -903,7 +930,7 @@ export function NewDeploymentModal({
 
             <button
               type="button"
-              disabled={!canCreate}
+              disabled={!canCreate || isSubmitting}
               onClick={handleCreate}
               className="
                 h-12
@@ -923,7 +950,28 @@ export function NewDeploymentModal({
                 enabled:hover:bg-[#eeeeee]
               "
             >
-              צור פריסה
+              {isSubmitting ? (
+                <span className="inline-flex items-center gap-2">
+                  <svg
+                    className="h-4 w-4 animate-spin"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                  >
+                    <circle
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="3"
+                      strokeDasharray="31.4 31.4"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                  יוצר פריסה...
+                </span>
+              ) : (
+                "צור פריסה"
+              )}
             </button>
           </div>
         </div>
