@@ -21,7 +21,7 @@ export class Drone implements Identifiable {
   @PrimaryColumn({ type: "bigint" })
   id!: number;
 
-  @Column({ type: "text", unique: true })
+  @Column({ type: "text", name: "drone_id", unique: true })
   droneId!: string;
 
   @ManyToOne(() => DroneType, { nullable: false })
