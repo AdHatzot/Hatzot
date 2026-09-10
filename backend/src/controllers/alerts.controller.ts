@@ -56,11 +56,21 @@ export async function getIntersectingCityZones(
     );
 }
 
+*/
 export async function getAlertableCityZones(
-    req: Request<Record<string, never>, unknown, AlertableZonesBody>,
+    _req: Request,
     res: Response,
 ): Promise<void> {
-    const { polygons, location, velocity } = req.body;
-    res.json(alertsService.getAlertableCityZones(polygons, location, velocity));
+    res.json(await alertsService.getAlertables());
 }
-    */
+export async function getAbleCityZones(
+    req: Request,
+    res: Response,
+): Promise<void> {
+    const location: Location = req.body?.location ?? {
+        latitude: Number(req.query?.latitude ?? 0),
+        longitude: Number(req.query?.longitude ?? 0),
+    };
+    const heading: number = Number(req.body?.heading ?? req.body?.azimuth ?? req.query?.heading ?? req.query?.azimuth ?? 0);
+    res.json(await alertsService.getIntersecting(location, heading));
+}

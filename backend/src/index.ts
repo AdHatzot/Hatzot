@@ -51,7 +51,7 @@ async function main(): Promise<void> {
   const server = createServer(app);
   attachHub(server);
   startBlueReloadTicker();
-  startDroneAlertsTicker();
+  //startDroneAlertsTicker();
   server.listen(PORT, () => {
     console.log(`c2-backend  http://localhost:${PORT}  ws://localhost:${PORT}/ws`);
   });
