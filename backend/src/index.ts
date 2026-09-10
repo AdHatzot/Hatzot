@@ -20,6 +20,7 @@ import { alertsRoutes } from "./routes/alerts.routes";
 import { logisticsRoutes } from "./routes/logistics.routes";
 import { loopRoutes } from "./routes/loop.routes";
 import { startBlueReloadTicker } from "./services/blue.service";
+import { startLoopStatusTicker } from "./services/loop.service";
 
 const PORT = Number(process.env.PORT ?? 3000);
 const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN ?? "http://localhost:5173";
@@ -50,6 +51,7 @@ async function main(): Promise<void> {
   const server = createServer(app);
   attachHub(server);
   startBlueReloadTicker();
+  startLoopStatusTicker();
   server.listen(PORT, () => {
     console.log(`c2-backend  http://localhost:${PORT}  ws://localhost:${PORT}/ws`);
   });

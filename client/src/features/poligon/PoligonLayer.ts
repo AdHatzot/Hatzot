@@ -26,9 +26,8 @@ export async function mountPolygonLayer(
   _map: LeafletMap,
 ): Promise<void> {
   try {
-    const response = await fetch(
-      `${import.meta.env.VITE_API_URL}/api/alerts/cities`,
-    );
+    const apiUrl = import.meta.env.VITE_API_URL ?? "";
+    const response = await fetch(`${apiUrl}/api/alerts/cities`);
 
     if (!response.ok) {
       throw new Error(

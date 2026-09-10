@@ -19,14 +19,14 @@ export function AppShell(): JSX.Element {
     <div className="flex h-full w-full flex-col overflow-hidden bg-bg text-text">
       <NavBar />
       <div className="flex min-h-0 flex-1">
-        <SidebarStart />
+        {isOps && <SidebarStart />}
         <main className="relative min-w-0 flex-1">
           <MapShell visible={isOps} />
           <Outlet />
         </main>
-        <SidebarEnd />
+        {isOps && <SidebarEnd />}
       </div>
-      <Ticker />
+      {isOps && <Ticker />}
     </div>
   );
 }

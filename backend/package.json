@@ -14,6 +14,7 @@
     "express": "^4.21.2",
     "pg": "^8.23.0",
     "shapefile": "^0.6.6",
+    "typeorm": "^1.1.1",
     "ws": "^8.18.0"
   },
   "devDependencies": {
@@ -28,5 +29,11 @@
     "tsx": "^4.19.1",
     "typescript": "^5.5.4"
   },
-  "packageManager": "pnpm@9.12.0"
+  "packageManager": "pnpm@9.12.0",
+  "description": "",
+  "main": "index.js",
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs"
 }
