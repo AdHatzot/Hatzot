@@ -6,6 +6,10 @@
  */
 
 import L, { type LayerGroup, type Map as LeafletMap } from "leaflet";
+import BlueMarker from "../../public/icons/blue-marker.svg";
+import CloudFence from "../../public/icons/CloudFence-Area.svg";
+import HorizonEye from "../../public/icons/HorizonEye-MX.svg";
+import IronHook from "../../public/icons/IronHook-SR.svg";
 
 const API_BASE_URL = "http://localhost:3000";
 
@@ -375,43 +379,67 @@ export async function mountBlueLayer(
   _map: LeafletMap,
 ): Promise<void> {
   try {
-    const response = await fetch(
-      `${API_BASE_URL}/api/logistics/launcher-data`,
-    );
+    const response = await fetch(`${API_BASE_URL}/api/logistics/launcher-data`);
 
     if (!response.ok) {
-      throw new Error(
-        `Failed to fetch launcher data: ${response.status}`,
-      );
+      throw new Error(`Failed to fetch launcher data: ${response.status}`);
     }
 
     const launchers: Launcher[] = await response.json();
 
     const blueIcon = L.icon({
       iconUrl: "/icons/blue-marker.svg",
-      iconSize: [32, 32],
+      iconSize: [20, 20],
+      iconAnchor: [16, 16],
+    });
+
+    const cloudFenceIcon = L.icon({
+      iconUrl: "/icons/CloudFence-Area.svg",
+      iconSize: [20, 20],
+      iconAnchor: [16, 16],
+    });
+
+    const horizonEyeIcon = L.icon({
+      iconUrl: "/icons/HorizonEye-MX.svg",
+      iconSize: [20, 20],
+      iconAnchor: [16, 16],
+    });
+
+    const ironHookIcon = L.icon({
+      iconUrl: "/icons/IronHook-SR.svg",
+      iconSize: [20, 20],
       iconAnchor: [16, 16],
     });
 
     launchers.forEach((launcher) => {
-      L.marker(
-        [
-          launcher.location.lat,
-          launcher.location.long,
-        ],
-        {
-          icon: blueIcon,
-        },
-      )
-        .bindPopup(
-          createLauncherPopup(launcher),
-          {
-            className: "blue-launcher-popup",
-            closeButton: true,
-            maxWidth: 280,
-            minWidth: 280,
-          },
-        )
+      console.log(launcher.name);
+
+      let icon: any = blueIcon;
+
+      switch (launcher.name) {
+        case "ShieldNest-Lite":
+          icon = blueIcon;
+          break;
+        case "CloudFence-Area":
+          icon = cloudFenceIcon;
+          break;
+        case "IronHook-SR":
+          icon = ironHookIcon;
+          break;
+        case "HorizonEye-MX":
+          icon = horizonEyeIcon;
+          break;
+      }
+
+      L.marker([launcher.location.lat, launcher.location.long], {
+        icon: icon,
+      })
+        .bindPopup(createLauncherPopup(launcher), {
+          className: "blue-launcher-popup",
+          closeButton: true,
+          maxWidth: 280,
+          minWidth: 280,
+        })
         .addTo(group);
     });
 
@@ -446,9 +474,6 @@ export async function mountBlueLayer(
       document.head.appendChild(style);
     }
   } catch (error) {
-    console.error(
-      "Failed to load blue launcher layer:",
-      error,
-    );
+    console.error("Failed to load blue launcher layer:", error);
   }
 }
