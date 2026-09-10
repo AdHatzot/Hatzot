@@ -251,118 +251,6 @@ export function DeploymentVerifyPage(): JSX.Element {
 
       {/* ================= MAIN TWO-COLUMN BODY ================= */}
       <div className="flex min-h-0 flex-1 overflow-hidden p-4 gap-4">
-        {/* ================= LEFT SECTION: DEPLOYMENT / MAP VIEW ================= */}
-        <section className="relative flex flex-1 flex-col overflow-hidden rounded-lg border border-[#1e2736] bg-[#090d13]">
-          {/* Header */}
-          <div className="flex h-11 shrink-0 items-center justify-between border-b border-[#1c2533] px-4">
-            <h3 className="text-sm font-bold text-white">תצוגת הפריסה</h3>
-            <span className="text-xs text-[#7f8c9b]">
-              לחץ על מערכת לצפייה בפרטים ולשינוי מיקום
-            </span>
-          </div>
-
-          {/* Tactical Map Placeholder Area */}
-          <div className="relative flex min-h-0 flex-1 flex-col justify-between overflow-hidden p-4">
-            {/* Subtle tactical radar background styling */}
-            <div
-              className="absolute inset-0 pointer-events-none opacity-20"
-              style={{
-                backgroundImage: `radial-gradient(circle at center, #223249 1px, transparent 1px), linear-gradient(to right, #16202e 1px, transparent 1px), linear-gradient(to bottom, #16202e 1px, transparent 1px)`,
-                backgroundSize: "40px 40px",
-              }}
-            />
-
-            {/* Top Toolbar: Search Input */}
-            <div className="relative z-10 flex items-center justify-start">
-              <div className="relative w-64">
-                <input
-                  type="text"
-                  placeholder="חיפוש במפה"
-                  value={mapSearch}
-                  onChange={(e) => setMapSearch(e.target.value)}
-                  className="h-9 w-full rounded-md border border-[#2b3848] bg-[#0f151e]/90 pr-9 pl-3 text-xs text-white placeholder:text-gray-400 outline-none backdrop-blur-sm transition focus:border-sky-500"
-                />
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  className="absolute right-2.5 top-2.5 text-gray-400"
-                >
-                  <circle cx="11" cy="11" r="8" />
-                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
-                </svg>
-              </div>
-            </div>
-
-            {/* Center: Clean tactical placeholder */}
-            <div className="relative z-10 flex flex-col items-center justify-center text-center">
-              <div className="flex h-16 w-16 items-center justify-center rounded-full border border-sky-500/20 bg-sky-500/5 text-sky-400">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                  <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6" />
-                  <line x1="8" y1="2" x2="8" y2="18" />
-                  <line x1="16" y1="6" x2="16" y2="22" />
-                </svg>
-              </div>
-              <p className="mt-3 text-sm font-medium text-gray-300">
-                תצוגת מפה אינה פעילה
-              </p>
-              <p className="mt-1 max-w-sm text-xs text-[#7f8c9b]">
-                פרטי הפריסה וסיכום המערכות מוצגים בחלונית הבקרה משמאל. תצוגת המפה האינטראקטיבית תתווסף בהמשך.
-              </p>
-            </div>
-
-            {/* Bottom Row: Zoom buttons and Legend bar */}
-            <div className="relative z-10 flex items-end justify-between gap-4">
-              {/* Zoom Controls */}
-              <div className="flex flex-col overflow-hidden rounded-md border border-[#2b3848] bg-[#111722]/90 shadow-md">
-                <button
-                  type="button"
-                  aria-label="התקרב"
-                  className="flex h-8 w-8 items-center justify-center text-base font-bold text-gray-300 transition hover:bg-white/10 hover:text-white"
-                >
-                  +
-                </button>
-                <div className="h-px bg-[#2b3848]" />
-                <button
-                  type="button"
-                  aria-label="התרחק"
-                  className="flex h-8 w-8 items-center justify-center text-base font-bold text-gray-300 transition hover:bg-white/10 hover:text-white"
-                >
-                  −
-                </button>
-              </div>
-
-              {/* Bottom Legend Bar - DYNAMIC from API */}
-              <div className="flex items-center gap-6 rounded-md border border-[#222c3b] bg-[#0c121a]/95 px-5 py-2.5 backdrop-blur-sm">
-                {launcherTypesLoading ? (
-                  <span className="text-xs text-gray-400">טוען סוגי משגרים...</span>
-                ) : (
-                  launcherSummaries
-                    .filter((s) => s.count > 0)
-                    .map((item) => (
-                      <div
-                        key={item.name}
-                        onClick={() => handleTogglePreviewLauncher(item.name)}
-                        className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition"
-                        title={`לחץ לתצוגה מקדימה - ${item.name}`}
-                      >
-                        {getLauncherTypeIcon(item.name, 20)}
-                        <div className="flex items-baseline gap-1 text-xs">
-                          <span className="text-gray-300 font-medium">{item.name}</span>
-                          <span className="font-bold text-white">{item.count}</span>
-                        </div>
-                      </div>
-                    ))
-                )}
-              </div>
-            </div>
-          </div>
-        </section>
-
         {/* ================= RIGHT SECTION: CARDS PANEL ================= */}
         <aside className="flex w-[420px] shrink-0 flex-col justify-between gap-4 overflow-y-auto">
           <div className="flex flex-col gap-4">
@@ -577,6 +465,118 @@ export function DeploymentVerifyPage(): JSX.Element {
             </button>
           </div>
         </aside>
+
+        {/* ================= LEFT SECTION: DEPLOYMENT / MAP VIEW ================= */}
+        <section className="relative flex flex-1 flex-col overflow-hidden rounded-lg border border-[#1e2736] bg-[#090d13]">
+          {/* Header */}
+          <div className="flex h-11 shrink-0 items-center justify-between border-b border-[#1c2533] px-4">
+            <h3 className="text-sm font-bold text-white">תצוגת הפריסה</h3>
+            <span className="text-xs text-[#7f8c9b]">
+              לחץ על מערכת לצפייה בפרטים ולשינוי מיקום
+            </span>
+          </div>
+
+          {/* Tactical Map Placeholder Area */}
+          <div className="relative flex min-h-0 flex-1 flex-col justify-between overflow-hidden p-4">
+            {/* Subtle tactical radar background styling */}
+            <div
+              className="absolute inset-0 pointer-events-none opacity-20"
+              style={{
+                backgroundImage: `radial-gradient(circle at center, #223249 1px, transparent 1px), linear-gradient(to right, #16202e 1px, transparent 1px), linear-gradient(to bottom, #16202e 1px, transparent 1px)`,
+                backgroundSize: "40px 40px",
+              }}
+            />
+
+            {/* Top Toolbar: Search Input */}
+            <div className="relative z-10 flex items-center justify-start">
+              <div className="relative w-64">
+                <input
+                  type="text"
+                  placeholder="חיפוש במפה"
+                  value={mapSearch}
+                  onChange={(e) => setMapSearch(e.target.value)}
+                  className="h-9 w-full rounded-md border border-[#2b3848] bg-[#0f151e]/90 pr-9 pl-3 text-xs text-white placeholder:text-gray-400 outline-none backdrop-blur-sm transition focus:border-sky-500"
+                />
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  className="absolute right-2.5 top-2.5 text-gray-400"
+                >
+                  <circle cx="11" cy="11" r="8" />
+                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                </svg>
+              </div>
+            </div>
+
+            {/* Center: Clean tactical placeholder */}
+            <div className="relative z-10 flex flex-col items-center justify-center text-center">
+              <div className="flex h-16 w-16 items-center justify-center rounded-full border border-sky-500/20 bg-sky-500/5 text-sky-400">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6" />
+                  <line x1="8" y1="2" x2="8" y2="18" />
+                  <line x1="16" y1="6" x2="16" y2="22" />
+                </svg>
+              </div>
+              <p className="mt-3 text-sm font-medium text-gray-300">
+                תצוגת מפה אינה פעילה
+              </p>
+              <p className="mt-1 max-w-sm text-xs text-[#7f8c9b]">
+                פרטי הפריסה וסיכום המערכות מוצגים בחלונית הבקרה מימין. תצוגת המפה האינטראקטיבית תתווסף בהמשך.
+              </p>
+            </div>
+
+            {/* Bottom Row: Zoom buttons and Legend bar */}
+            <div className="relative z-10 flex items-end justify-between gap-4">
+              {/* Zoom Controls */}
+              <div className="flex flex-col overflow-hidden rounded-md border border-[#2b3848] bg-[#111722]/90 shadow-md">
+                <button
+                  type="button"
+                  aria-label="התקרב"
+                  className="flex h-8 w-8 items-center justify-center text-base font-bold text-gray-300 transition hover:bg-white/10 hover:text-white"
+                >
+                  +
+                </button>
+                <div className="h-px bg-[#2b3848]" />
+                <button
+                  type="button"
+                  aria-label="התרחק"
+                  className="flex h-8 w-8 items-center justify-center text-base font-bold text-gray-300 transition hover:bg-white/10 hover:text-white"
+                >
+                  −
+                </button>
+              </div>
+
+              {/* Bottom Legend Bar - DYNAMIC from API */}
+              <div className="flex items-center gap-6 rounded-md border border-[#222c3b] bg-[#0c121a]/95 px-5 py-2.5 backdrop-blur-sm">
+                {launcherTypesLoading ? (
+                  <span className="text-xs text-gray-400">טוען סוגי משגרים...</span>
+                ) : (
+                  launcherSummaries
+                    .filter((s) => s.count > 0)
+                    .map((item) => (
+                      <div
+                        key={item.name}
+                        onClick={() => handleTogglePreviewLauncher(item.name)}
+                        className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition"
+                        title={`לחץ לתצוגה מקדימה - ${item.name}`}
+                      >
+                        {getLauncherTypeIcon(item.name, 20)}
+                        <div className="flex items-baseline gap-1 text-xs">
+                          <span className="text-gray-300 font-medium">{item.name}</span>
+                          <span className="font-bold text-white">{item.count}</span>
+                        </div>
+                      </div>
+                    ))
+                )}
+              </div>
+            </div>
+          </div>
+        </section>
       </div>
     </div>
   );
