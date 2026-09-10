@@ -48,7 +48,6 @@ const parseAlertEntry = (
       typeof entry.cityId !== "number" ||
       !Number.isInteger(entry.cityId)
     ) {
-      console.warn("Unrecognized alert entry:", raw);
       return null;
     }
 
@@ -56,7 +55,6 @@ const parseAlertEntry = (
   }
 
   if (typeof raw !== "string") {
-    console.warn("Unrecognized alert entry:", raw);
     return null;
   }
 
@@ -64,7 +62,6 @@ const parseAlertEntry = (
   const objectId = Number(idStr);
 
   if ((state !== "siren" && state !== "threatened") || Number.isNaN(objectId)) {
-    console.warn(`Unrecognized alert entry: "${raw}"`);
     return null;
   }
 
@@ -85,7 +82,7 @@ export async function mountPolygonLayer(
   };
 
   const startBlink = (entry: TrackedPolygon) => {
-    if (entry.blinkInterval) return; // already blinking, don't restart
+    if (entry.blinkInterval) return;
     entry.showingRed = true;
     setColor(entry.polygon, ALERT_COLOR);
     entry.blinkInterval = setInterval(() => {
@@ -102,7 +99,7 @@ export async function mountPolygonLayer(
   };
 
   const applyState = (entry: TrackedPolygon, next: AlertState) => {
-    if (entry.state === next) return; // unchanged, don't touch DOM/timers
+    if (entry.state === next) return;
 
     if (next === "siren") {
       startBlink(entry);
@@ -117,7 +114,6 @@ export async function mountPolygonLayer(
     entry.state = next;
   };
 
-  // --- Build polygons once ---
   try {
     const response = await fetch(`${apiUrl}/api/alerts/cities`);
     if (!response.ok) {
@@ -161,7 +157,6 @@ export async function mountPolygonLayer(
     console.error("Failed to load polygon layer:", error);
   }
 
-  // --- Poll alert status every 2s and reconcile against current state ---
   const pollStatus = async () => {
     try {
       const res = await fetch(`${apiUrl}/api/alerts/status`);
@@ -179,7 +174,6 @@ export async function mountPolygonLayer(
         if (entry) applyState(entry, parsed.state);
       });
 
-      // Anything not present in this poll = back to normal
       tracked.forEach((entry, objectId) => {
         if (!activeIds.has(objectId) && entry.state !== "normal") {
           applyState(entry, "normal");
@@ -191,11 +185,10 @@ export async function mountPolygonLayer(
   };
 
   if (!stopped) {
-    await pollStatus(); // sync immediately instead of waiting the first 2s
+    await pollStatus();
     pollTimer = setInterval(pollStatus, POLL_INTERVAL_MS);
   }
 
-  // Cleanup: stop polling and clear any active blink intervals
   return () => {
     stopped = true;
     if (pollTimer) clearInterval(pollTimer);
