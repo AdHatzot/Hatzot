@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   ExclamationTriangleFill,
+  GeoAltFill,
   MegaphoneFill,
 } from "react-bootstrap-icons";
 
@@ -10,6 +11,7 @@ type AlertStatus = {
   type: AlertType;
   cityId: number;
   cityName?: string;
+  timestamp?: number;
 };
 
 const POLL_INTERVAL_MS = 2000;
@@ -47,7 +49,18 @@ const normalizeAlertStatus = (value: unknown): AlertStatus | null => {
     ...(typeof entry.cityName === "string"
       ? { cityName: entry.cityName }
       : {}),
+    ...(typeof entry.timestamp === "number" && Number.isFinite(entry.timestamp)
+      ? { timestamp: entry.timestamp }
+      : {}),
   };
+};
+
+const getMinutesSinceAlert = (timestamp?: number): number | null => {
+  if (timestamp === undefined) {
+    return null;
+  }
+
+  return Math.max(0, Math.floor((Date.now() / 1000 - timestamp) / 60));
 };
 
 export function CitiesList(): JSX.Element {
@@ -153,30 +166,48 @@ export function CitiesList(): JSX.Element {
 
       {filteredAlerts.length > 0 && (
         <ul className="divide-y divide-line">
-          {filteredAlerts.map((alert) => (
-            <li
-              key={`${alert.type}-${alert.cityId}`}
-              className="flex items-center justify-between px-3 py-2 text-sm"
-            >
-              <span className="text-text">
-                {alert.cityName ?? `יישוב ${alert.cityId}`}
-              </span>
-              <span
-                className={
-                  alert.type === "siren"
-                    ? "text-team-red"
-                    : "text-team-alerts"
-                }
-                title={alert.type === "siren" ? "סירנה" : "סכנה"}
+          {filteredAlerts.map((alert) => {
+            const minutesSinceAlert = getMinutesSinceAlert(alert.timestamp);
+
+            return (
+              <li
+                key={`${alert.type}-${alert.cityId}`}
+                className="flex items-center justify-between gap-3 px-3 py-2 text-sm"
               >
-                {alert.type === "siren" ? (
-                  <MegaphoneFill aria-hidden="true" size={16} />
-                ) : (
-                  <ExclamationTriangleFill aria-hidden="true" size={16} />
-                )}
-              </span>
-            </li>
-          ))}
+                <div className="flex min-w-0 items-center gap-2 text-text">
+                  <GeoAltFill
+                    aria-hidden="true"
+                    className="shrink-0 text-text-dim"
+                    size={15}
+                  />
+                  <div className="flex min-w-0 flex-col gap-0.5">
+                    <span className="truncate">
+                      {alert.cityName ?? `יישוב ${alert.cityId}`}
+                    </span>
+                    {minutesSinceAlert !== null && (
+                      <span className="text-[11px] text-text-dim">
+                        לפני {minutesSinceAlert} דקות
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <span
+                  className={
+                    alert.type === "siren"
+                      ? "text-team-red"
+                      : "text-team-alerts"
+                  }
+                  title={alert.type === "siren" ? "סירנה" : "סכנה"}
+                >
+                  {alert.type === "siren" ? (
+                    <MegaphoneFill aria-hidden="true" size={16} />
+                  ) : (
+                    <ExclamationTriangleFill aria-hidden="true" size={16} />
+                  )}
+                </span>
+              </li>
+            );
+          })}
         </ul>
       )}
     </section>

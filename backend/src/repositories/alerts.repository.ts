@@ -21,6 +21,7 @@ export type AlertStatus = {
 	type: AlertType;
 	cityId: number;
 	cityName?: string;
+	timestamp?: number;
 };
 
 const ALERT_KEY_PREFIXES: ReadonlyArray<{
@@ -62,6 +63,23 @@ const getCityName = async (key: string): Promise<string | undefined> => {
 	}
 };
 
+const getAlertTimestamp = async (key: string): Promise<number | undefined> => {
+	const value = await redis.sendCommand(["JSON.GET", key, "$.timestamp"]);
+	if (typeof value !== "string" || !value) {
+		return undefined;
+	}
+
+	try {
+		const parsed: unknown = JSON.parse(value);
+		const timestamp = Array.isArray(parsed) ? parsed[0] : undefined;
+		return typeof timestamp === "number" && Number.isFinite(timestamp)
+			? timestamp
+			: undefined;
+	} catch {
+		return undefined;
+	}
+};
+
 export const getAlertStatus = async (): Promise<AlertStatus[]> => {
 	const statuses = await Promise.all(
 		ALERT_KEY_PREFIXES.map(async ({ type, prefix }) => {
@@ -74,7 +92,15 @@ export const getAlertStatus = async (): Promise<AlertStatus[]> => {
 				}
 
 				const cityName = await getCityName(key);
-				return [{ type, cityId, ...(cityName ? { cityName } : {}) }];
+				const timestamp = await getAlertTimestamp(key);
+				return [
+					{
+						type,
+						cityId,
+						...(cityName ? { cityName } : {}),
+						...(timestamp !== undefined ? { timestamp } : {}),
+					},
+				];
 			})).then((entries) => entries.flat());
 		}),
 	);
