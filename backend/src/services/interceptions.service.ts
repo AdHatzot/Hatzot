@@ -33,6 +33,7 @@ const mockData = (drones_id: number[]) => {
     interceptorTypeId: 1,
     interceptorLongitude: 0,
     interceptorLatitude: 0,
+    priority: 3,
     timeOfImpact: "2026-09-10T13:30:00Z",
   }));
 };
@@ -51,6 +52,7 @@ export async function createInterception(
     interceptorLongitude: data.interceptorLongitude,
     interceptorLatitude: data.interceptorLatitude,
     status: InterceptionStatus.PENDING,
+    priority: data.priority,
     result: null,
   }));
 
