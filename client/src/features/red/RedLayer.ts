@@ -9,7 +9,6 @@ import L, { type LayerGroup, type Map as LeafletMap } from "leaflet";
 import axios from "axios";
 import { type Drone } from "@/types";
 import { cssVar } from "@/shared/theme";
-import config from "@/config";
 
 const droneMarkers = new Map<number, L.CircleMarker>();
 
@@ -25,7 +24,8 @@ export function mountRedLayer(group: LayerGroup, _map: LeafletMap): void {
 
 async function fetchAndUpdateDrones(group: LayerGroup): Promise<void> {
   try {
-    const response = await axios.get<Drone[]>(`${config.VITE_SERVER_URL}/api/red/drones`);
+    const SERVER_URL = import.meta.env.VITE_SERVER_URL;
+    const response = await axios.get<Drone[]>(`${SERVER_URL}/api/red/drones`);
     const drones = response.data;
     const colour = cssVar("--team-red");
 
