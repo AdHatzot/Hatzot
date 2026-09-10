@@ -15,7 +15,7 @@ export function NewDeploymentButton(): JSX.Element {
 
     try {
       const response = await fetch(
-        `${API_URL}/api/logistics/deployments`,
+        `${API_URL}/api/logistics/deployment`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

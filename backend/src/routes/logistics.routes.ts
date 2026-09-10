@@ -29,6 +29,10 @@ logisticsRoutes.get(
   asyncHandler(logistics.getAllInterceptorTypes),
 );
 logisticsRoutes.post(
+  "/deployment",
+  asyncHandler(logistics.createDeployment),
+);
+logisticsRoutes.post(
   "/deployments",
   asyncHandler(logistics.createDeployment),
 );

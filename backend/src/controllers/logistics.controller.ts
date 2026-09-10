@@ -179,3 +179,5 @@ export async function createDeployment(
 
   res.status(201).json(result);
 }
+
+export const deployment = createDeployment;

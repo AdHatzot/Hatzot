@@ -51,7 +51,9 @@ export interface CreateDeploymentRequest {
 export interface CreateDeploymentResult {
   deploymentId: number;
   deploymentName: string;
+  deployment: Deployment;
   launchersCreated: number;
+  launchers: LiveLauncher[];
 }
 
 export const logisticsDeploymentRepository =
@@ -139,10 +141,18 @@ export async function createDeployment(
 
     await liveLauncherRepo.save(launchers);
 
+    const savedLaunchers = await liveLauncherRepo.find({
+      where: { deploymentId: savedDeployment.id },
+      relations: { launcherType: true },
+      order: { id: "ASC" },
+    });
+
     return {
       deploymentId: savedDeployment.id,
       deploymentName: savedDeployment.name,
-      launchersCreated: launchers.length,
+      deployment: savedDeployment,
+      launchersCreated: savedLaunchers.length,
+      launchers: savedLaunchers,
     };
   });
 }
