@@ -17,6 +17,6 @@ logisticsRoutes.get("/", asyncHandler(logistics.getStatus));
 logisticsRoutes.post("/fire-intercept", asyncHandler(logistics.fireIntercept));
 logisticsRoutes.get("/all", asyncHandler(logistics.getAll));
 logisticsRoutes.get(
-  "/live-deployment/:id",
+  "/launchers/:id",
   asyncHandler(logistics.getLiveDeployments),
 );
