@@ -6,41 +6,38 @@
  *
  */
 
-export enum InterceptionStatus {
-  PENDING = "PENDING",
-  IN_PROGRESS = "IN_PROGRESS",
-  SUCCESS = "SUCCESS",
-  FAILED = "FAILED",
-  ABORTED = "ABORTED",
-}
+import { interceptionsRepository } from "../repositories/interceptions.repository";
+import { InterceptionStatus } from "../db/entities/interception.entity";
 
-export enum InterceptionResult {
-  HIT = "HIT",
-  MISS = "MISS",
-}
+const mockData = (drones_id: number[]) => {
+  return drones_id.map((droneId) => ({
+    droneId,
+    liveLauncherId: 1,
+    interceptorTypeId: 1,
+    interceptorLongitude: 0,
+    interceptorLatitude: 0,
+    priority: 3,
+  }));
+};
 
-// priority: smallint enum, values 1-5 — numeric, so a plain enum works well here
-export enum InterceptionPriority {
-  ONE = 1,
-  TWO = 2,
-  THREE = 3,
-  FOUR = 4,
-  FIVE = 5,
-}
+export async function createInterception(drones_id: number[]): Promise<void> {
+  // TODO: replace mockData(drones_id) with a real API call once the endpoint exists,
+  // e.g. const interceptionData = await interceptionApiClient.fetch(drones_id);
+  const interceptionData = mockData(drones_id);
 
-export interface Interception {
-  id: number; // bigint
-  liveLauncherId: number; // FK -> bigint
-  interceptorTypeId: number; // FK -> smallint
-  droneId: number; // FK -> bigint
-  launchedAt: Date; // timestamptz
-  interceptorLongitude: number; // double
-  interceptorLatitude: number; // double
-  priority: InterceptionPriority; // smallint enum, 1-5
-  status: InterceptionStatus; // enum
-  result: InterceptionResult; // enum
-}
+  const saves = interceptionData.map((data) =>
+    interceptionsRepository.save({
+      liveLauncherId: data.liveLauncherId,
+      interceptorTypeId: data.interceptorTypeId,
+      droneId: data.droneId,
+      launchedAt: new Date(),
+      interceptorLongitude: data.interceptorLongitude,
+      interceptorLatitude: data.interceptorLatitude,
+      priority: data.priority,
+      status: InterceptionStatus.PENDING,
+      result: null,
+    }),
+  );
 
-export async function createInterception(drones_id: number[]) {
-  return drones_id;
+  await Promise.all(saves);
 }
