@@ -90,7 +90,9 @@ export function getAlertableCityZones(
   return polygons.filter((polygon) => {
     const ttl = polygon.properties?.TTL;
     return (
-      pointToPolygonDistance(dronePoint, polygon, { units: "meters" }) <= ttl
+      pointToPolygonDistance(dronePoint, polygon, { units: "meters" }) /
+        velocity <=
+      ttl
     );
   });
 }
