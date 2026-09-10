@@ -40,6 +40,27 @@ export const logisticsDeploymentRepository =
 export const logisticsLiveLauncherRepository =
   dataSource.getRepository(LiveLauncher);
 
+export const getLaunchersFromDb = async (deploymentId: number): Promise<LiveLauncher[]> => {
+  return logisticsLiveLauncherRepository
+    .createQueryBuilder("launcher")
+    .leftJoinAndSelect("launcher.launcherType", "launcherType")
+    .leftJoinAndSelect("launcher.launcherAmmunitions", "ammunition")
+    .leftJoinAndSelect("ammunition.interceptorType", "interceptorType")
+    .where("launcher.deployment_id = :deploymentId", { deploymentId })
+    .getMany();
+};
+
+export const getLauncherFromDb = async (id: string): Promise<LiveLauncher | null> => {
+  return logisticsLiveLauncherRepository
+    .createQueryBuilder("launcher")
+    .leftJoinAndSelect("launcher.launcherType", "launcherType")
+    .leftJoinAndSelect("launcher.launcherAmmunitions", "ammunition")
+    .leftJoinAndSelect("ammunition.interceptorType", "interceptorType")
+    .where("launcher.id = :id", { id })
+    .andWhere("launcher.active = :active", { active: true })
+    .getOne();
+};
+
 export const logisticsLauncherTypeRepository =
   dataSource.getRepository(LauncherType);
 

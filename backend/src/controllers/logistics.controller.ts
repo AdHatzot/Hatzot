@@ -12,6 +12,31 @@ import * as logisticsService from "../services/logistics.service";
 import { HttpError } from "../shared/httpError";
 import { DeploymentStatus } from "../db/entities/deployment.entity";
 
+export const getAllLaunchers = async (req: Request<{ id: string }>, res: Response) => {
+  const deploymentId = Number(req.query.id);
+  const launchers = await logisticsService.getAllLaunchers(deploymentId);
+
+  res.status(200).json(launchers);
+}
+
+export const getLauncherById = async (
+  req: Request,
+  res: Response,
+) => {
+  const launcher = await logisticsService.getLauncherById(
+    req.params.id,
+  );
+
+  if (!launcher) {
+    res.status(404).json({
+      message: "Launcher not found",
+    });
+    return;
+  }
+
+  res.status(200).json(launcher);
+}
+
 export async function getStatus(_req: Request, res: Response): Promise<void> {
   res.json(await logisticsService.getStatus());
 }
@@ -41,34 +66,45 @@ export async function fireIntercept(
     );
   }
 
-  res.json(
-    await logisticsService.fireIntercept({
-      launcherId,
-      interceptorTypeId,
-    }),
-  );
+  const result = await logisticsService.fireIntercept({
+    launcherId,
+    interceptorTypeId,
+  });
+
+  res
+    .type("text/plain")
+    .send(
+      `Interceptor ${result.interceptorTypeId} in launcher ${result.launcherId} was fired successfully.`,
+    );
 }
 
-export async function getAllLiveLaunchers(_req: Request, res: Response): Promise<void> {
-  res.json(await logisticsService.getAllLiveLaunchers());
+export async function getAllLiveLaunchers(req: Request, res: Response): Promise<void> {
+  const deploymentId = Number(req.query.id);
+  res.json(await logisticsService.getLiveLaunchersByDeploymentId(deploymentId));
 }
 
-export async function getAllLauncherTypes(_req: Request, res: Response): Promise<void> {
+export async function getAllLauncherTypes(
+  _req: Request,
+  res: Response,
+): Promise<void> {
   res.json(await logisticsService.getAllLauncherTypes());
 }
 
-export async function getAllInterceptorTypes(_req: Request, res: Response): Promise<void> {
+export async function getAllInterceptorTypes(
+  _req: Request,
+  res: Response,
+): Promise<void> {
   res.json(await logisticsService.getAllInterceptorTypes());
 }
 
-export async function getLauncherById(req: Request<{ id: string }>, res: Response): Promise<void> {
-  const launcherId = req.query.id !== undefined ? Number(req.query.id) : 1;
-  const launcher = await logisticsService.getLauncherById(launcherId);
-  if (!launcher) {
+export async function getLiveLauncherByDeploymentId(req: Request<{ id: string }>, res: Response): Promise<void> {
+  const deploymentId = Number(req.query.id);
+  const launchers = await logisticsService.getLiveLaunchersByDeploymentId(deploymentId);
+  if (!launchers) {
     res.status(404).json({ error: "Launcher not found" });
     return;
   }
-  res.json(launcher);
+  res.json(launchers);
 }
 
 export async function getAllDeployments(_req: Request, res: Response): Promise<void> {
