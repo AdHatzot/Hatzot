@@ -18,7 +18,11 @@ import { LiveLauncher } from "../db/entities/liveLauncher.entity";
 import {
   logisticsDeploymentRepository,
   logisticsLiveLauncherRepository,
+  logisticsLauncherTypeRepository,
+  logisticsInterceptorTypeRepository
 } from "../repositories/logistics.repository";
+import { LauncherType } from "../db/entities/launcherType.entity";
+import { InterceptorType } from "../db/entities/InterceptorType.entity";
 
 export async function getStatus(): Promise<{ team: Team; status: string }> {
   return { team: "logistics", status: "empty" };
@@ -49,7 +53,7 @@ export async function getAll() {
 }
 
 export async function getLiveDeployments(
-  deploymentId?: number
+  deploymentId?: number,
 ): Promise<
   Array<{
     deployment: unknown;
@@ -94,6 +98,16 @@ export async function getLiveDeployments(
       asl: entity.asl,
       agl: entity.agl,
     },
-    ammunitionAmount: Number(results.raw[index].total_ammunition_quantity),
+    ammunitionAmount: Number(
+      results.raw[index]?.total_ammunition_quantity ?? 0,
+    ),
   }));
+}
+
+export async function getAllLauncherTypes(): Promise<Array<LauncherType>> {
+  return await logisticsLauncherTypeRepository.find();
+}
+
+export async function getAllInterceptorTypes(): Promise<Array<InterceptorType>> {
+  return await logisticsInterceptorTypeRepository.find();
 }
