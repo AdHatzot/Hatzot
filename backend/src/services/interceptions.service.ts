@@ -26,7 +26,13 @@ import {
 //   return response.json();
 // }
 
-const mockData = (drones_id: number[]) => {
+const mockData = ({
+  drones_id,
+  is_real,
+}: {
+  drones_id: number[];
+  is_real: boolean;
+}) => {
   return drones_id.map((droneId) => ({
     droneId,
     liveLauncherId: 1,
@@ -44,7 +50,7 @@ export async function createInterception(
   // TODO: replace mockData(drones_id) with a real API call once the endpoint exists,
 
   // TODO: medium-check if an active interception exists for the given drone_id and the result isnt final yet (if it is and you have a MISS then lanch again)
-  const interceptionData = mockData(drones_id);
+  const interceptionData = mockData({ drones_id: drones_id, is_real: false });
 
   const saves: Partial<Interception>[] = interceptionData.map((data) => ({
     liveLauncherId: data.liveLauncherId,
