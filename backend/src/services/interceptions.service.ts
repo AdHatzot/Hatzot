@@ -6,8 +6,15 @@
  *
  */
 
-import { getSucessRate, interceptionsRepository } from "../repositories/interceptions.repository";
-import { InterceptionStatus } from "../db/entities/interception.entity";
+import {
+  getSucessRate,
+  interceptionsRepository,
+} from "../repositories/interceptions.repository";
+import {
+  Interception,
+  InterceptionResult,
+  InterceptionStatus,
+} from "../db/entities/interception.entity";
 
 // TODO: Un-comment once external API endpoint is available
 // async function fetchInterceptionData(drones_id: number[]) {
@@ -29,26 +36,45 @@ const mockData = (drones_id: number[]) => {
   }));
 };
 
-export async function createInterception(drones_id: number[]): Promise<any> {
+export async function createInterception(
+  drones_id: number[],
+): Promise<Interception[]> {
   // TODO: replace mockData(drones_id) with a real API call once the endpoint exists,
   const interceptionData = mockData(drones_id);
 
-  const saves = interceptionData.map((data) => ({
+  const saves: Partial<Interception>[] = interceptionData.map((data) => ({
     liveLauncherId: data.liveLauncherId,
     interceptorTypeId: data.interceptorTypeId,
     droneId: data.droneId,
     launchedAt: new Date(),
     interceptorLongitude: data.interceptorLongitude,
     interceptorLatitude: data.interceptorLatitude,
+    priority: 3,
     status: InterceptionStatus.PENDING,
     result: null,
   }));
 
   const saved = await interceptionsRepository.save(saves);
-  return saved;
+
+  const updated = await Promise.all(
+    saved.map(async (interception) => {
+      const didIntercept = await getDidIntercept(interception.id);
+      interception.status = didIntercept
+        ? InterceptionStatus.SUCCESS
+        : InterceptionStatus.FAILED;
+      interception.result = didIntercept
+        ? InterceptionResult.HIT
+        : InterceptionResult.MISS;
+      return interception;
+    }),
+  );
+
+  return await interceptionsRepository.save(updated);
 }
 
-export async function getDidIntercept(InterceptionId: number): Promise<boolean> {
+export async function getDidIntercept(
+  InterceptionId: number,
+): Promise<boolean> {
   const successRate = await getSucessRate(InterceptionId);
 
   if (successRate === null) {
