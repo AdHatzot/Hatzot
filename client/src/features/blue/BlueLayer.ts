@@ -413,6 +413,7 @@ export async function mountBlueLayer(
 
     launchers.forEach((launcher) => {
       let icon: any = blueIcon;
+      let color: string = "#1A8BE8"
 
       switch (launcher.name) {
         case "ShieldNest-Lite":
@@ -420,19 +421,22 @@ export async function mountBlueLayer(
           break;
         case "CloudFence-Area":
           icon = cloudFenceIcon;
+          color = "#AF7DE8";
           break;
         case "IronHook-SR":
           icon = ironHookIcon;
+          color = "#ED9E5F";
           break;
         case "HorizonEye-MX":
           icon = horizonEyeIcon;
+          color = "#87BD66";
           break;
       }
 
       L.circle([launcher.location.lat, launcher.location.long], {
         radius: launcher.range / 2,
-        color: "#1A8BE8",
-        fillColor: "#1A8BE8",
+        color: color,
+        fillColor: color,
         fillOpacity: 0.05,
         opacity: 0.15,
         weight: 0.5,
